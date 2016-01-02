@@ -3,21 +3,17 @@
 import vtk
 import os
 
+environment_dir = "util/stl/environment/"
+
+# grab all stl files out of the directory
+environment_files = os.listdir( environment_dir )
+environment_files = filter(
+    lambda file: os.path.splitext( file )[1] == ".stl" ,
+    environment_files) 
+
 # where am I?
 print(os.getcwd())
 print(os.path.abspath("util/stl/environment/table"))
-
-# read in the stl files
-reader = vtk.vtkSTLReader()
-reader.SetFileName("util/stl/environment/table.stl")
-
-# mapper the reader data into polygon data
-mapper = vtk.vtkPolyDataMapper()
-mapper.SetInputConnection( reader.GetOutputPort() )
-
-# asign the data to an actor that we can control
-actor = vtk.vtkActor()
-actor.SetMapper( mapper )
 
 # Create the graphics structure. The renderer renders into the render
 # window. The render window interactor captures mouse events and will
@@ -29,8 +25,23 @@ renWin.AddRenderer(ren)
 iren = vtk.vtkRenderWindowInteractor()
 iren.SetRenderWindow(renWin)
 
-# Add the actors to the renderer, set the background and size
-ren.AddActor(actor)
+for file in environment_files:
+
+    # read in the stl files
+    reader = vtk.vtkSTLReader()
+    reader.SetFileName(environment_dir + file)
+
+    # mapper the reader data into polygon data
+    mapper = vtk.vtkPolyDataMapper()
+    mapper.SetInputConnection( reader.GetOutputPort() )
+
+    # asign the data to an actor that we can control
+    actor = vtk.vtkActor()
+    actor.SetMapper( mapper )
+
+    # Add the actors to the renderer, set the background and size
+    ren.AddActor(actor)
+
 ren.SetBackground(0.1, 0.2, 0.4)
 renWin.SetSize(200, 200)
 
