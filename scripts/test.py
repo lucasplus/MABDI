@@ -49,4 +49,7 @@ renWin.SetSize(200, 200)
 # called before an event loop.
 iren.Initialize()
 
-iren.Start()
+iren.Render()
+# iren.Start()
+
+print("hi")
