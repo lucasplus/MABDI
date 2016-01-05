@@ -3,7 +3,7 @@ import os
 import vtk
 
 class SimulateScenario(object):
-    """Simulate a Scenario. 
+    """ Simulate a Scenario. 
     A scenario has:
     Objects (user defined)
     - Defined by stl files from a user provided directory.
@@ -42,7 +42,8 @@ class SimulateScenario(object):
         out_environment_objects = map(
             lambda file: os.path.splitext( file )[0],
             environment_files)
-
+        
+        # add the objects to the renderer
         for file in environment_files:
             # read in the stl files
             reader = vtk.vtkSTLReader()
@@ -60,6 +61,9 @@ class SimulateScenario(object):
         self.renderWindow.SetSize(640, 480)
         self.interactor.Initialize()
         self.interactor.Render()
+
+        camera = self.renderer.GetActiveCamera()
+
 
         return out_environment_objects
 
