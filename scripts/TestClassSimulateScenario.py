@@ -3,6 +3,6 @@ execfile("util/AddMabdiToPath.py")
 
 import mabdi
 
-scenario = mabdi.SimulateScenario()
+scenario = mabdi.SimulateScenario( "util/stl/environment/" )
 
-scenario.setup( "util/stl/environment" )
+
