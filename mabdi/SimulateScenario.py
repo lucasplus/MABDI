@@ -1,6 +1,7 @@
 
 import os
 import vtk
+import time
 
 class SimulateScenario(object):
     """ Simulate a Scenario. 
@@ -14,6 +15,10 @@ class SimulateScenario(object):
     - Simulated by this class and is the main output of doing the simulation.
     - A kinect-like depth sensor. 
     TODO
+    - _sensor.py - Will have it's own vtk objects and return a set of depth images
+      - how best to name internal classes PEP8?
+    - set_environment()
+    - get_sensor_measurments()
     - The first pass at this will not implement object addition and removal"""
 
     def __init__(self,environment_directory):
@@ -21,9 +26,11 @@ class SimulateScenario(object):
         self.renderer = vtk.vtkRenderer()
         self.renderWindow = vtk.vtkRenderWindow()
         self.renderWindow.AddRenderer(self.renderer)
-        self.interactor = vtk.vtkRenderWindowInteractor()
-        self.interactor.SetRenderWindow(self.renderWindow)
         
+        self.renderer.SetBackground(0.1, 0.2, 0.4)
+        self.renderWindow.SetSize(640, 480)
+        self.renderWindow.Start() # works without it
+
         self.environment_objects = self.__init_objects(environment_directory)
 
     def __init_objects(self,in_environment_directory):
@@ -57,13 +64,15 @@ class SimulateScenario(object):
             # Add the actors to the renderer, set the background and size
             self.renderer.AddActor(actor)
 
-        self.renderer.SetBackground(0.1, 0.2, 0.4)
-        self.renderWindow.SetSize(640, 480)
-        self.interactor.Initialize()
-        self.interactor.Render()
-
         camera = self.renderer.GetActiveCamera()
+        # camera.SetPosition(0,1,10)
+        print camera.GetPosition()
 
+        for i in range(-40,40):
+            camera.SetPosition(i/10.0,1,10)
+            self.renderWindow.Render()
+            time.sleep(0.1)
+            print i
 
         return out_environment_objects
 
