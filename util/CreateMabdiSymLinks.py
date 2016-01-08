@@ -7,6 +7,9 @@ import os
 # http://stackoverflow.com/a/15043806/4068274
 def symlink(source, link_name):
     # import os
+    # if the symbolic link already exists, do nothing
+    if os.path.isdir( link_name ):
+        return
     source = os.path.normpath( source )
     os_symlink = getattr(os, "symlink", None)
     if callable(os_symlink):
