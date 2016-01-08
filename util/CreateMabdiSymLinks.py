@@ -38,6 +38,8 @@ if not os.path.isdir('mabdi'):
         sys.exit('I do not know where I am')
 
 # make symbolic links
+# remember if you add a symbolic link you have to also
+# add it to the .gitignore file
 os.chdir('scripts')
 symlink('../mabdi','mabdi')
 os.chdir('..')
