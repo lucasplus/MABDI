@@ -15,7 +15,7 @@ class SimulateScenario(object):
     - Simulated by this class and is the main output of doing the simulation.
     - A kinect-like depth sensor. 
     TODO
-    - _sensor.py - Will have it's own vtk objects and return a set of depth images
+    - _SimulateSensor.py - Will have it's own vtk objects and return a set of depth images
       - how best to name internal classes PEP8?
     - set_environment()
     - get_sensor_measurments()
@@ -69,10 +69,13 @@ class SimulateScenario(object):
         print camera.GetPosition()
 
         for i in range(-40,40):
+            camera.SetFocalPoint(i/20.0,1,0)
             camera.SetPosition(i/10.0,1,10)
             self.renderWindow.Render()
             time.sleep(0.1)
             print i
+            print camera.GetPosition()
+            print camera.GetFocalPoint()
 
         return out_environment_objects
 

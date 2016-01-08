@@ -1,6 +1,4 @@
 
-exec(open("util/AddMabdiToPath.py").read())
-
 import mabdi
 
 scenario = mabdi.SimulateScenario( "util/stl/environment/" )
