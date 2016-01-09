@@ -31,6 +31,18 @@ class SimulateScenario(object):
         self.renderWindow.SetSize(640, 480)
         self.renderWindow.Start() # works without it
 
+        resources_dir = os.path.join(
+            os.path.dirname( __file__ ), 
+            'simulated_scenario_files')
+
+        environment_directory = os.path.join(
+            resources_dir,
+            'environments',
+            'table_with_cups')
+
+        print(resources_dir)
+        print(environment_directory)
+
         self.environment_objects = self.__init_objects(environment_directory)
 
     def __init_objects(self,in_environment_directory):
@@ -54,7 +66,7 @@ class SimulateScenario(object):
         for file in environment_files:
             # read in the stl files
             reader = vtk.vtkSTLReader()
-            reader.SetFileName(in_environment_directory + file)
+            reader.SetFileName(os.path.join(in_environment_directory,file))
             # mapper the reader data into polygon data
             mapper = vtk.vtkPolyDataMapper()
             mapper.SetInputConnection( reader.GetOutputPort() )
@@ -73,9 +85,6 @@ class SimulateScenario(object):
             camera.SetPosition(i/10.0,1,10)
             self.renderWindow.Render()
             time.sleep(0.1)
-            print i
-            print camera.GetPosition()
-            print camera.GetFocalPoint()
-
+            
         return out_environment_objects
 
