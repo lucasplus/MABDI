@@ -1,7 +1,7 @@
 
 import mabdi
 
-scenario = mabdi.SimulateScenario( "util/stl/environment/" )
+scenario = mabdi.SimulateScenario()
 
 # TODO
 # remove interactor 

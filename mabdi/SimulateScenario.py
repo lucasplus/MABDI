@@ -1,7 +1,9 @@
 
 import os
 import vtk
-import time
+import numpy as np
+
+from _SimulateSensor import _SimulateSensor
 
 class SimulateScenario(object):
     """ Simulate a Scenario. 
@@ -21,52 +23,51 @@ class SimulateScenario(object):
     - get_sensor_measurments()
     - The first pass at this will not implement object addition and removal"""
 
-    def __init__(self,environment_directory):
-        # vtk rendering objects we will need
-        self.renderer = vtk.vtkRenderer()
-        self.renderWindow = vtk.vtkRenderWindow()
-        self.renderWindow.AddRenderer(self.renderer)
-        
-        self.renderer.SetBackground(0.1, 0.2, 0.4)
-        self.renderWindow.SetSize(640, 480)
-        self.renderWindow.Start() # works without it
+    def __init__(self):
 
-        resources_dir = os.path.join(
+        # in the future there may be more environments, 
+        # right now there is only one
+        in_environment = 'table_with_cups'
+        
+        self.sensor = _SimulateSensor()
+
+        dir_simulated_scenario = os.path.join(
             os.path.dirname( __file__ ), 
             'simulated_scenario_files')
+        dir_simulated_scenario = os.path.normpath( dir_simulated_scenario )
 
-        environment_directory = os.path.join(
-            resources_dir,
+        dir_environments = os.path.join(
+            dir_simulated_scenario,
             'environments',
-            'table_with_cups')
+            in_environment)
+        dir_environments = os.path.normpath( dir_environments )
 
-        print(resources_dir)
-        print(environment_directory)
+        self.objects = self.set_up_renderer(dir_environments)
 
-        self.environment_objects = self.__init_objects(environment_directory)
-
-    def __init_objects(self,in_environment_directory):
+    def set_up_renderer( self, in_dir ):
         """ Initialize objects from directory path containing stl files.
         Only grab stl files and return the file name without the extension."""
         
         # TODO: checks to make sure directory is valid
         # TODO: clean slate if not being run from __init__
 
+        in_dir = os.path.normpath( in_dir )
+
         # grab files with the stl extension from given directory
-        environment_files = filter(
+        files = filter(
             lambda file: os.path.splitext( file )[1] == ".stl" ,
-            os.listdir( in_environment_directory )) 
+            os.listdir( in_dir )) 
 
         # strip the file extension and give me just the name of the file
-        out_environment_objects = map(
+        objects = map(
             lambda file: os.path.splitext( file )[0],
-            environment_files)
+            files)
         
         # add the objects to the renderer
-        for file in environment_files:
+        for file in files:
             # read in the stl files
             reader = vtk.vtkSTLReader()
-            reader.SetFileName(os.path.join(in_environment_directory,file))
+            reader.SetFileName(os.path.join(in_dir,file))
             # mapper the reader data into polygon data
             mapper = vtk.vtkPolyDataMapper()
             mapper.SetInputConnection( reader.GetOutputPort() )
@@ -74,17 +75,20 @@ class SimulateScenario(object):
             actor = vtk.vtkActor()
             actor.SetMapper( mapper )
             # Add the actors to the renderer, set the background and size
-            self.renderer.AddActor(actor)
+            self.sensor.renderer.AddActor(actor)
+        
+        rang = np.arange(-40,41,5,dtype=float)
+        pos = np.vstack(( rang/20, 
+                          np.ones(len(rang)), 
+                          np.ones(len(rang))*10 ))
+        print("position",pos)
 
-        camera = self.renderer.GetActiveCamera()
-        # camera.SetPosition(0,1,10)
-        print camera.GetPosition()
+        lka = np.vstack(( rang/10, 
+                          np.ones(len(rang)), 
+                          np.zeros(len(rang)) ))
+        print("lookat",lka)
 
-        for i in range(-40,40):
-            camera.SetFocalPoint(i/20.0,1,0)
-            camera.SetPosition(i/10.0,1,10)
-            self.renderWindow.Render()
-            time.sleep(0.1)
+        self.sensor.move_camera( pos, lka )
             
-        return out_environment_objects
+        return objects
 
