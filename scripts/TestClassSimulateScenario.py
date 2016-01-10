@@ -1,7 +1,11 @@
 
 import mabdi
 
-scenario = mabdi.SimulateScenario()
+scenario = mabdi.SimulateScenario( load_default=True )
+
+print(scenario.list_of_environments)
+
+scenario.move_camera()
 
 # TODO
 # remove interactor 

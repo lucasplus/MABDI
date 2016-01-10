@@ -22,11 +22,7 @@ class SimulateScenario(object):
     - get_sensor_measurments()
     - The first pass at this will not implement object addition and removal"""
 
-    def __init__(self,in_envrionment=None):
-
-        # in the future there may be more environments, 
-        # right now there is only one
-        in_environment = 'table_with_cups'
+    def __init__( self, load_default=False ):
         
         self.sensor = _SimulateSensor()
 
@@ -47,10 +43,10 @@ class SimulateScenario(object):
             [ env for env in os.listdir(self._dir_environments)
               if os.path.isdir( os.path.join(self._dir_environments,env) ) ]
 
-        # TODO: this won't be in __init__ in the future
-        self.list_of_objects = self.set_up_environment( self.list_of_environments[0] )
-
-        self.move_camera()
+        # load the default environment if requested
+        # right now the default environment is the first one because there is only one
+        if load_default: 
+            self.list_of_objects = self.set_up_environment( self.list_of_environments[0] )
 
     def set_up_environment( self, in_env ):
         """ Initialize objects from directory path containing stl files.
