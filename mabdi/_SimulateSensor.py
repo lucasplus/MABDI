@@ -19,10 +19,13 @@ class _SimulateSensor(object):
 
     def move_camera( self, in_position, in_lookat ):
         # TODO: make sure in_position and in_lookat are the same size
+        # TODO: make sure arguments are of size Nx3
+
         camera = self.renderer.GetActiveCamera()
-        for i in range( in_position.shape[1] ):
-            camera.SetPosition( in_position[:,i] )
-            camera.SetFocalPoint( in_lookat[:,i] )
+
+        for pos,lka in zip(in_position,in_lookat):
+            camera.SetPosition( pos )
+            camera.SetFocalPoint( lka )
             self.renderWindow.Render()
             time.sleep(0.1)
 

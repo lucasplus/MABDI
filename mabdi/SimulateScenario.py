@@ -34,13 +34,11 @@ class SimulateScenario(object):
         dir_simulated_scenario = os.path.join(
             os.path.dirname( __file__ ), 
             'simulated_scenario_files')
-        dir_simulated_scenario = os.path.normpath( dir_simulated_scenario )
 
         dir_environments = os.path.join(
             dir_simulated_scenario,
             'environments',
             in_environment)
-        dir_environments = os.path.normpath( dir_environments )
 
         self.objects = self.set_up_renderer(dir_environments)
 
@@ -78,15 +76,14 @@ class SimulateScenario(object):
             self.sensor.renderer.AddActor(actor)
         
         rang = np.arange(-40,41,5,dtype=float)
+        
         pos = np.vstack(( rang/20, 
                           np.ones(len(rang)), 
-                          np.ones(len(rang))*10 ))
-        print("position",pos)
-
+                          np.ones(len(rang))*10 )).T
+        
         lka = np.vstack(( rang/10, 
                           np.ones(len(rang)), 
-                          np.zeros(len(rang)) ))
-        print("lookat",lka)
+                          np.zeros(len(rang)) )).T
 
         self.sensor.move_camera( pos, lka )
             
