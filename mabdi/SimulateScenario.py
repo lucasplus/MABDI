@@ -17,13 +17,12 @@ class SimulateScenario(object):
     - Simulated by this class and is the main output of doing the simulation.
     - A kinect-like depth sensor. 
     TODO
-    - _SimulateSensor.py - Will have it's own vtk objects and return a set of depth images
-      - how best to name internal classes PEP8?
+    - how best to name internal classes PEP8?
     - set_environment()
     - get_sensor_measurments()
     - The first pass at this will not implement object addition and removal"""
 
-    def __init__(self):
+    def __init__(self,in_envrionment=None):
 
         # in the future there may be more environments, 
         # right now there is only one
@@ -31,30 +30,41 @@ class SimulateScenario(object):
         
         self.sensor = _SimulateSensor()
 
+        # directory where simulated scenario files are located
         dir_simulated_scenario = os.path.join(
             os.path.dirname( __file__ ), 
             'simulated_scenario_files')
 
-        dir_environments = os.path.join(
+        # directory that contains a folder for each environment
+        self._dir_environments = os.path.join(
             dir_simulated_scenario,
-            'environments',
-            in_environment)
+            'environments')
 
-        self.objects = self.set_up_renderer(dir_environments)
+        # list of folders in the environments directory
+        # each folder is expected to hold .stl files corresponding 
+        # to a specific environment
+        self.list_of_environments = \
+            [ env for env in os.listdir(self._dir_environments)
+              if os.path.isdir( os.path.join(self._dir_environments,env) ) ]
 
-    def set_up_renderer( self, in_dir ):
+        # TODO: this won't be in __init__ in the future
+        self.list_of_objects = self.set_up_environment( self.list_of_environments[0] )
+
+        self.move_camera()
+
+    def set_up_environment( self, in_env ):
         """ Initialize objects from directory path containing stl files.
         Only grab stl files and return the file name without the extension."""
         
         # TODO: checks to make sure directory is valid
         # TODO: clean slate if not being run from __init__
 
-        in_dir = os.path.normpath( in_dir )
+        dir = os.path.normpath( os.path.join( self._dir_environments, in_env ) )
 
         # grab files with the stl extension from given directory
         files = filter(
             lambda file: os.path.splitext( file )[1] == ".stl" ,
-            os.listdir( in_dir )) 
+            os.listdir( dir )) 
 
         # strip the file extension and give me just the name of the file
         objects = map(
@@ -65,7 +75,7 @@ class SimulateScenario(object):
         for file in files:
             # read in the stl files
             reader = vtk.vtkSTLReader()
-            reader.SetFileName(os.path.join(in_dir,file))
+            reader.SetFileName(os.path.join(dir,file))
             # mapper the reader data into polygon data
             mapper = vtk.vtkPolyDataMapper()
             mapper.SetInputConnection( reader.GetOutputPort() )
@@ -74,6 +84,10 @@ class SimulateScenario(object):
             actor.SetMapper( mapper )
             # Add the actors to the renderer, set the background and size
             self.sensor.renderer.AddActor(actor)
+
+        return objects
+
+    def move_camera(self):
         
         rang = np.arange(-40,41,5,dtype=float)
         
@@ -87,5 +101,5 @@ class SimulateScenario(object):
 
         self.sensor.move_camera( pos, lka )
             
-        return objects
+        
 
