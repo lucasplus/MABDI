@@ -79,7 +79,7 @@ class SimulateScenario(object):
             actor = vtk.vtkActor()
             actor.SetMapper( mapper )
             # Add the actors to the renderer, set the background and size
-            #self.sensor.renderer.AddActor(actor)
+            self.sensor.renderer.AddActor(actor)
 
         return objects
 
@@ -89,7 +89,7 @@ class SimulateScenario(object):
         
         pos = np.vstack(( rang/20, 
                           np.ones(len(rang)), 
-                          np.ones(len(rang))*10 )).T
+                          np.ones(len(rang))*5 )).T
         
         lka = np.vstack(( rang/10, 
                           np.ones(len(rang)), 
