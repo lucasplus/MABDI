@@ -69,18 +69,19 @@ class _SimulateSensor(object):
         self.d_renderer = vtk.vtkRenderer()
         self.d_ren_win = vtk.vtkRenderWindow()
         self.d_ren_win.AddRenderer(self.d_renderer)
+        self.d_ren_win.SetSize(640, 480)
         
         self.filter = vtk.vtkWindowToImageFilter()
         self.filter.SetInputBufferTypeToZBuffer()
         self.filter.SetInput( self.renderer.GetVTKWindow() )
         self.filter.Update()
         
-        writer = vtk.vtkTIFFWriter()
-        writer.SetInputConnection( self.filter.GetOutputPort() )
-        writer.SetFileName("hai.tif")
+        #writer = vtk.vtkTIFFWriter()
+        #writer.SetInputConnection( self.filter.GetOutputPort() )
+        #writer.SetFileName("hai.tif")
 
-        self.ren_win.Render()
-        writer.Write()
+        #self.ren_win.Render()
+        #writer.Write()
 
         self.image_mapper = vtk.vtkImageMapper()
         self.image_mapper.SetInputConnection( self.filter.GetOutputPort() )
@@ -93,7 +94,7 @@ class _SimulateSensor(object):
 
         self.ren_win.Render()
         self.d_ren_win.Start()
-        self.filter.Modified()
+        self.filter.Update()
         self.d_ren_win.Render()
 
         # add observer
