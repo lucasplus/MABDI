@@ -79,7 +79,7 @@ class SimulateScenario(object):
             actor = vtk.vtkActor()
             actor.SetMapper( mapper )
             # Add the actors to the renderer, set the background and size
-            self.sensor.renderer.AddActor(actor)
+            #self.sensor.renderer.AddActor(actor)
 
         return objects
 
