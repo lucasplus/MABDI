@@ -89,7 +89,7 @@ class SimulateScenario(object):
         
         pos = np.vstack(( rang/20, 
                           np.ones(len(rang)), 
-                          np.ones(len(rang))*10 )).T
+                          np.ones(len(rang))*5 )).T
         
         lka = np.vstack(( rang/10, 
                           np.ones(len(rang)), 
