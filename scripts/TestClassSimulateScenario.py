@@ -5,7 +5,9 @@ scenario = mabdi.SimulateScenario( load_default=True )
 
 print(scenario.list_of_environments)
 
-scenario.move_camera()
+images = scenario.move_camera()
+
+print('hai')
 
 # TODO
 # figure out how to best define sensor movement

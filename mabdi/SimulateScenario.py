@@ -95,7 +95,7 @@ class SimulateScenario(object):
                           np.ones(len(rang)), 
                           np.zeros(len(rang)) )).T
 
-        self.sensor.move_camera( pos, lka )
+        return self.sensor.move_camera( pos, lka )
             
         
 

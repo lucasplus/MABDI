@@ -1,11 +1,16 @@
 
 import vtk
+from vtk.util import numpy_support
 import numpy as np
 import time
+import sys
 import os
 
 class _SimulateSensor(object):
     """Class to simulate the output of a kinect-like sensor
+    - pov - Point of View of the simulated sensor
+    - depth - mechanics for getting the depth image from the pov of the sensor
+    - observer - maybe in the future 
     - Caller is responsible for updating the actors"""
 
     def __init__(self):
@@ -16,15 +21,14 @@ class _SimulateSensor(object):
             renderer = vtk.vtkRenderer()
             window = vtk.vtkRenderWindow()
 
-        # Renderer and RenderWindow rendering the POV of the sensor
+        # POV of the sensor
         self._pov = _VTK_Renderer_And_RenderWindow()
         self._pov.window.AddRenderer(self._pov.renderer)
         self._pov.window.SetSize(640, 480)
         self._pov.renderer.SetBackground(0.1, 0.2, 0.4)
-        self.renderer = self._pov.renderer
+        self.renderer = self._pov.renderer # unprivatize this for the user TODO maybe decorator
 
-        # Renderer and RenderWindow for an image created by a vtkWindowToImageFilter
-        # that gets the depth from the render window
+        # Depth output of the sensor
         self._depth = _VTK_Renderer_And_RenderWindow()
         self._depth.window.AddRenderer(self._depth.renderer)
         self._depth.window.SetSize(640, 480)
@@ -54,20 +58,38 @@ class _SimulateSensor(object):
         self._pov.renderer.GetActiveCamera().SetClippingRange( 0.5, 10.0 );
 
     def _callback_get_depth_image( self, obj, env ):
-        self.filter.Modified()
-        self._depth.window.Render()
+        print('Useless callback')
+        # self.filter.Modified()
+        # self._depth.window.Render()
 
     def move_camera( self, in_position, in_lookat ):
         # TODO: make sure in_position and in_lookat are the same size
         # TODO: make sure arguments are of size Nx3
 
+        # TODO: execption here I think
+        if in_position.shape != in_lookat.shape:
+            sys.exit("check move_camera input arguments")
+        if in_position.shape[1] != 3 or in_lookat.shape[1] != 3:
+            sys.exit("check move_camera input arguments")
+
         camera = self._pov.renderer.GetActiveCamera()
 
-        for pos,lka in zip(in_position,in_lookat):
+        ot_images = np.zeros( (640,480,in_position.shape[0]) )
+        for i, (pos,lka) in enumerate( zip(in_position,in_lookat) ):
             camera.SetPosition( pos )
             camera.SetFocalPoint( lka )
+            print(i)
             self._pov.window.Render()
+            self.filter.Modified()
+            self._depth.window.Render()
+            image = self.filter.GetOutput()
+            ot_images[:,:,i] = numpy_support.vtk_to_numpy( image.GetPointData().GetScalars() ).reshape(640,480)
+            
             time.sleep(0.1)
+
+        self._pov.window.Finalize()
+        self._depth.window.Finalize()
+        return ot_images
 
 
 
