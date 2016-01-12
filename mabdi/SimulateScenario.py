@@ -20,7 +20,8 @@ class SimulateScenario(object):
     - how best to name internal classes PEP8?
     - set_environment()
     - get_sensor_measurments()
-    - The first pass at this will not implement object addition and removal"""
+    - The first pass at this will not implement object addition and removal
+    - show_environment() """
 
     def __init__( self, load_default=False ):
         

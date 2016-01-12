@@ -66,22 +66,27 @@ class _SimulateSensor(object):
 
         camera = self._pov.renderer.GetActiveCamera()
 
-        ot_images = np.zeros( (480,640,in_position.shape[0]) )
+        d_images = np.zeros( (480,640,in_position.shape[0]) )
         for i, (pos,lka) in enumerate( zip(in_position,in_lookat) ):
+            # move camera and render
             camera.SetPosition( pos )
             camera.SetFocalPoint( lka )
-            # print(i)
             self._pov.window.Render()
             self.filter.Modified()
             self._depth.window.Render()
-            image = self.filter.GetOutput()
-            ot_images[:,:,i] = numpy_support.vtk_to_numpy( image.GetPointData().GetScalars() ).reshape(480,640)
-            
-            time.sleep(0.1)
+            # the vtkWindowToImageFilter now has the updated depth image
+            # pull it out and save to stack of matrices that we preallocated
+            # the indexing on d_images is to flip the matrix across horizontal axis
+            d_images[::-1,:,i] = numpy_support.vtk_to_numpy( 
+                self.filter.GetOutput().GetPointData().GetScalars() 
+                ).reshape(480,640)
 
+        # close the render windows
+        # they can be started again without reinitializing
         self._pov.window.Finalize()
         self._depth.window.Finalize()
-        return ot_images
+
+        return d_images
 
 
 

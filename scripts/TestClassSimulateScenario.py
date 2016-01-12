@@ -1,13 +1,21 @@
 
 import mabdi
 
+import matplotlib.pyplot as plt
+import matplotlib.image as mpimg
+import numpy as np
+
 scenario = mabdi.SimulateScenario( load_default=True )
 
 print(scenario.list_of_environments)
 
 images = scenario.move_camera()
 
-print('hai')
+image = images[:,:,8]
+
+plt.imshow(image)
+plt.colorbar()
+plt.show()
 
 # TODO
 # figure out how to best define sensor movement
