@@ -50,17 +50,9 @@ class _SimulateSensor(object):
         image_actor.SetMapper( image_mapper )
         self._depth.renderer.AddActor( image_actor )
 
-        # add observer
-        self._pov.window.AddObserver( 'RenderEvent' , self._callback_get_depth_image ) 
-
         # set camera intrinsic parameters 
         self._pov.renderer.GetActiveCamera().SetViewAngle( 60.0 );
         self._pov.renderer.GetActiveCamera().SetClippingRange( 0.5, 10.0 );
-
-    def _callback_get_depth_image( self, obj, env ):
-        print('Useless callback')
-        # self.filter.Modified()
-        # self._depth.window.Render()
 
     def move_camera( self, in_position, in_lookat ):
         # TODO: make sure in_position and in_lookat are the same size
