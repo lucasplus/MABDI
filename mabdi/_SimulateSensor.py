@@ -66,16 +66,16 @@ class _SimulateSensor(object):
 
         camera = self._pov.renderer.GetActiveCamera()
 
-        ot_images = np.zeros( (640,480,in_position.shape[0]) )
+        ot_images = np.zeros( (480,640,in_position.shape[0]) )
         for i, (pos,lka) in enumerate( zip(in_position,in_lookat) ):
             camera.SetPosition( pos )
             camera.SetFocalPoint( lka )
-            print(i)
+            # print(i)
             self._pov.window.Render()
             self.filter.Modified()
             self._depth.window.Render()
             image = self.filter.GetOutput()
-            ot_images[:,:,i] = numpy_support.vtk_to_numpy( image.GetPointData().GetScalars() ).reshape(640,480)
+            ot_images[:,:,i] = numpy_support.vtk_to_numpy( image.GetPointData().GetScalars() ).reshape(480,640)
             
             time.sleep(0.1)
 

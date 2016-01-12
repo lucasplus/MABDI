@@ -44,5 +44,11 @@ if not os.path.isdir('mabdi'):
 # remember if you add a symbolic link you have to also
 # add it to the .gitignore file
 os.chdir('scripts')
-symlink('../mabdi','mabdi')
+if not os.path.isdir('mabdi'):
+    symlink('../mabdi','mabdi')
 os.chdir('..')
+
+os.chdir('scripts/notebooks')
+if not os.path.isdir('mabdi'):
+    symlink('../../mabdi','mabdi')
+os.chdir('../..')
