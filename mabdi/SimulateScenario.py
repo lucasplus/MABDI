@@ -25,7 +25,16 @@ class SimulateScenario(object):
 
     def __init__( self, load_default=False ):
         
+        # c-like structure containing items related to the sensor
+        # sensor
+        #   path
+        #     position
+        #     lookat
         self.sensor = _SimulateSensor()
+        class _struct_sensor_path:
+            position = [];
+            lookat = []
+        self.sensor.path = _struct_sensor_path()
 
         # directory where simulated scenario files are located
         dir_simulated_scenario = os.path.join(
@@ -47,9 +56,10 @@ class SimulateScenario(object):
         # load the default environment if requested
         # right now the default environment is the first one because there is only one
         if load_default: 
-            self.list_of_objects = self.set_up_environment( self.list_of_environments[0] )
+            self.list_of_objects = self.set_environment( self.list_of_environments[0] )
+            self.set_sensor_path()
 
-    def set_up_environment( self, in_env ):
+    def set_environment( self, in_env ):
         """ Initialize objects from directory path containing stl files.
         Only grab stl files and return the file name without the extension."""
         
@@ -84,7 +94,7 @@ class SimulateScenario(object):
 
         return objects
 
-    def move_camera(self):
+    def set_sensor_path(self):
         
         rang = np.arange(-40,41,5,dtype=float)
         
@@ -96,7 +106,12 @@ class SimulateScenario(object):
                           np.ones(len(rang)), 
                           np.zeros(len(rang)) )).T
 
-        return self.sensor.move_camera( pos, lka )
+        self.sensor.path.position = pos
+        self.sensor.path.lookat   = lka
+
+    def run(self):
+        return self.sensor.move_camera( 
+            self.sensor.path.position, self.sensor.path.lookat )
             
         
 

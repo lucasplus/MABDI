@@ -17,19 +17,19 @@ class _SimulateSensor(object):
         # initialize vtk objects
 
         # class to act as a c struct and contain a vtkRenderer and vtkRenderWindow
-        class _VTK_Renderer_And_RenderWindow:
+        class _struct_VTK_Renderer_And_RenderWindow:
             renderer = vtk.vtkRenderer()
             window = vtk.vtkRenderWindow()
 
         # POV of the sensor
-        self._pov = _VTK_Renderer_And_RenderWindow()
+        self._pov = _struct_VTK_Renderer_And_RenderWindow()
         self._pov.window.AddRenderer(self._pov.renderer)
         self._pov.window.SetSize(640, 480)
         self._pov.renderer.SetBackground(0.1, 0.2, 0.4)
         self.renderer = self._pov.renderer # unprivatize this for the user TODO maybe decorator
 
         # Depth output of the sensor
-        self._depth = _VTK_Renderer_And_RenderWindow()
+        self._depth = _struct_VTK_Renderer_And_RenderWindow()
         self._depth.window.AddRenderer(self._depth.renderer)
         self._depth.window.SetSize(640, 480)
         
@@ -75,7 +75,7 @@ class _SimulateSensor(object):
             self.filter.Modified()
             self._depth.window.Render()
             # the vtkWindowToImageFilter now has the updated depth image
-            # pull it out and save to stack of matrices that we preallocated
+            # pull it out and save to the preallocated d_images (think of it as a stack of images)
             # the indexing on d_images is to flip the matrix across horizontal axis
             d_images[::-1,:,i] = numpy_support.vtk_to_numpy( 
                 self.filter.GetOutput().GetPointData().GetScalars() 
