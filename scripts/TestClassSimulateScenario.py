@@ -11,7 +11,7 @@ print(scenario.list_of_environments)
 
 images = scenario.run()
 
-image = images[:,:,8]
+image = images[:,:,images.shape[2]/2]
 
 plt.imshow(image)
 plt.colorbar()

@@ -1,6 +1,5 @@
 # Project specific ignores
-scripts/mabdi
-scripts/notebooks/mabdi
+.idea
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

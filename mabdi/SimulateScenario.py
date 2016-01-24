@@ -60,8 +60,11 @@ class SimulateScenario(object):
             self.set_sensor_path()
 
     def set_environment( self, in_env ):
-        """ Initialize objects from directory path containing stl files.
-        Only grab stl files and return the file name without the extension."""
+        """ Environment is defined by a set of stl files.
+        Arguments:
+          in_env - name of folder containing the stl files and also the name of the environment
+        Return:
+          objects - list of the object names. Defined to be the names of the stl files """
         
         # TODO: checks to make sure directory is valid
         # TODO: clean slate if not being run from __init__
@@ -96,7 +99,7 @@ class SimulateScenario(object):
 
     def set_sensor_path(self):
         
-        rang = np.arange(-40,41,5,dtype=float)
+        rang = np.arange(-40,41,dtype=float)
         
         pos = np.vstack(( rang/20, 
                           np.ones(len(rang)), 
