@@ -6,6 +6,7 @@ import time
 import sys
 import os
 
+
 class _SimulateSensor(object):
     """Class to simulate the output of a kinect-like sensor
     - pov - Point of View of the simulated sensor
@@ -26,7 +27,7 @@ class _SimulateSensor(object):
         self._pov.window.AddRenderer(self._pov.renderer)
         self._pov.window.SetSize(640, 480)
         self._pov.renderer.SetBackground(0.1, 0.2, 0.4)
-        self.renderer = self._pov.renderer # unprivatize this for the user TODO maybe decorator
+        self.renderer = self._pov.renderer  # un-privatize this for the user TODO maybe decorator
 
         # Depth output of the sensor
         self._depth = _struct_VTK_Renderer_And_RenderWindow()
@@ -54,11 +55,11 @@ class _SimulateSensor(object):
         self._pov.renderer.GetActiveCamera().SetViewAngle( 60.0 );
         self._pov.renderer.GetActiveCamera().SetClippingRange( 0.5, 10.0 );
 
-    def move_camera( self, in_position, in_lookat ):
+    def move_camera(self, in_position, in_lookat):
         # TODO: make sure in_position and in_lookat are the same size
         # TODO: make sure arguments are of size Nx3
 
-        # TODO: execption here I think
+        # TODO: exception here I think
         if in_position.shape != in_lookat.shape:
             sys.exit("check move_camera input arguments")
         if in_position.shape[1] != 3 or in_lookat.shape[1] != 3:
@@ -66,20 +67,20 @@ class _SimulateSensor(object):
 
         camera = self._pov.renderer.GetActiveCamera()
 
-        d_images = np.zeros( (480,640,in_position.shape[0]) )
-        for i, (pos,lka) in enumerate( zip(in_position,in_lookat) ):
+        d_images = np.zeros((480, 640, in_position.shape[0]))
+        for i, (pos, lka) in enumerate(zip(in_position, in_lookat)):
             # move camera and render
-            camera.SetPosition( pos )
-            camera.SetFocalPoint( lka )
+            camera.SetPosition(pos)
+            camera.SetFocalPoint(lka)
             self._pov.window.Render()
             self.filter.Modified()
             self._depth.window.Render()
             # the vtkWindowToImageFilter now has the updated depth image
             # pull it out and save to the preallocated d_images (think of it as a stack of images)
             # the indexing on d_images is to flip the matrix across horizontal axis
-            d_images[::-1,:,i] = numpy_support.vtk_to_numpy( 
+            d_images[::-1, :, i] = numpy_support.vtk_to_numpy(
                 self.filter.GetOutput().GetPointData().GetScalars() 
-                ).reshape(480,640)
+                ).reshape(480, 640)
         """
         transform = vtk.vtkTransformCoordinateSystems()
         transform.SetInputCoordinateSystemToViewport()
@@ -97,8 +98,8 @@ class _SimulateSensor(object):
 
         coordinate = vtk.vtkCoordinate()
         coordinate.SetCoordinateSystemToDisplay()
-        coordinate.SetValue( 300, 200 )
-        xyz = coordinate.GetComputedWorldValue( self._pov.renderer )
+        coordinate.SetValue(300, 200)
+        xyz = coordinate.GetComputedWorldValue(self._pov.renderer)
 
         # close the render windows
         # they can be started again without reinitializing

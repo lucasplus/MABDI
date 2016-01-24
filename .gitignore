@@ -1,5 +1,10 @@
-# Project specific ignores
+# __________________________________ Project specific ignores
+
+# Ignore PyCharm folder with project configurations
+# (change this to share my PyCharm configuration)
 .idea
+
+#___________________________________ Github suggested python ignores
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
