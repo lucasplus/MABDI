@@ -11,6 +11,7 @@ iren.SetRenderWindow(renWin)
 
 # create cube
 cube = vtk.vtkCubeSource()
+cube.SetCenter(0, 0, 0)
 
 # mapper
 cubeMapper = vtk.vtkPolyDataMapper()
@@ -25,10 +26,11 @@ ren.AddActor(cubeActor)
 
 
 def render_point_cloud(obj, env):
+    #source.SetCenter(0,0,0)
     pixel_index = obj.GetEventPosition()
     coordinate = vtk.vtkCoordinate()
     coordinate.SetCoordinateSystemToDisplay()
-    coordinate.SetValue(pixel_index[0], pixel_index[1])
+    coordinate.SetValue(pixel_index[0], pixel_index[1], 0)
     xyz = coordinate.GetComputedWorldValue(ren)
     # create source
     source = vtk.vtkSphereSource()
@@ -48,6 +50,9 @@ def render_point_cloud(obj, env):
     ren.Render()
     print(pixel_index)
     print(xyz)
+    print(actor.GetMTime())
+    print(actor.GetCenter())
+    print("")
 
 iren.AddObserver('UserEvent', render_point_cloud)
 
