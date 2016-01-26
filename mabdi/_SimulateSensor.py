@@ -38,22 +38,22 @@ class _SimulateSensor(object):
         # the depth image (in this case)
         self.filter = vtk.vtkWindowToImageFilter()
         self.filter.SetInputBufferTypeToZBuffer()
-        self.filter.SetInput( self._pov.renderer.GetVTKWindow() )
+        self.filter.SetInput(self._pov.renderer.GetVTKWindow())
         self.filter.Update()
         
         # take the output of the mapper and turn it into an actor that
         # can be rendered
         image_mapper = vtk.vtkImageMapper()
-        image_mapper.SetInputConnection( self.filter.GetOutputPort() )
-        image_mapper.SetColorWindow( 1.0 );
-        image_mapper.SetColorLevel( 0.5 );
+        image_mapper.SetInputConnection(self.filter.GetOutputPort())
+        image_mapper.SetColorWindow(1.0)
+        image_mapper.SetColorLevel(0.5)
         image_actor = vtk.vtkActor2D()
-        image_actor.SetMapper( image_mapper )
-        self._depth.renderer.AddActor( image_actor )
+        image_actor.SetMapper(image_mapper)
+        self._depth.renderer.AddActor(image_actor)
 
         # set camera intrinsic parameters 
-        self._pov.renderer.GetActiveCamera().SetViewAngle( 60.0 );
-        self._pov.renderer.GetActiveCamera().SetClippingRange( 0.5, 10.0 );
+        self._pov.renderer.GetActiveCamera().SetViewAngle(60.0)
+        self._pov.renderer.GetActiveCamera().SetClippingRange(0.5, 10.0)
 
     def move_camera(self, in_position, in_lookat):
         # TODO: make sure in_position and in_lookat are the same size
