@@ -24,34 +24,30 @@ cubeActor.SetMapper(cubeMapper)
 # assign actor to the renderer
 ren.AddActor(cubeActor)
 
+# world point picker
+picker = vtk.vtkWorldPointPicker()
+iren.SetPicker(picker)
+
 
 def render_point_cloud(obj, env):
-    #source.SetCenter(0,0,0)
     pixel_index = obj.GetEventPosition()
-    coordinate = vtk.vtkCoordinate()
-    coordinate.SetCoordinateSystemToDisplay()
-    coordinate.SetValue(pixel_index[0], pixel_index[1], 0)
-    xyz = coordinate.GetComputedWorldValue(ren)
-    # create source
+    iren.GetPicker().Pick(pixel_index[0], pixel_index[1], 0,ren)
+    xyz = iren.GetPicker().GetPickPosition()
+
+    # render the picked point
     source = vtk.vtkSphereSource()
     source.SetCenter(xyz)
-    source.SetRadius(0.1)
-
-    # mapper
+    source.SetRadius(0.05)
     mapper = vtk.vtkPolyDataMapper()
     mapper.SetInputConnection(source.GetOutputPort())
-
-    # actor
     actor = vtk.vtkActor()
     actor.SetMapper(mapper)
 
     # assign actor to the renderer
     ren.AddActor(actor)
-    ren.Render()
+    iren.Render()
     print(pixel_index)
     print(xyz)
-    print(actor.GetMTime())
-    print(actor.GetCenter())
     print("")
 
 iren.AddObserver('UserEvent', render_point_cloud)
