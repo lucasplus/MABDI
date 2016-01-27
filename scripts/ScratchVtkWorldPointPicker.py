@@ -1,4 +1,5 @@
 import vtk
+from vtk.util.misc import vtkGetDataRoot
 
 # create a rendering window and renderer
 ren = vtk.vtkRenderer()
@@ -28,6 +29,11 @@ ren.AddActor(cubeActor)
 picker = vtk.vtkWorldPointPicker()
 iren.SetPicker(picker)
 
+# set camera intrinsic params to mimic kinect
+ren.GetActiveCamera().SetViewAngle(60.0)
+ren.GetActiveCamera().SetClippingRange(0.5, 10.0)
+iren.GetInteractorStyle().SetAutoAdjustCameraClippingRange(0)
+
 
 def render_point_cloud(obj, env):
     pixel_index = obj.GetEventPosition()
@@ -37,11 +43,15 @@ def render_point_cloud(obj, env):
     # render the picked point
     source = vtk.vtkSphereSource()
     source.SetCenter(xyz)
-    source.SetRadius(0.05)
+    source.SetRadius(0.02)
     mapper = vtk.vtkPolyDataMapper()
     mapper.SetInputConnection(source.GetOutputPort())
     actor = vtk.vtkActor()
     actor.SetMapper(mapper)
+    rgb = [0.0, 0.0, 0.0]
+    colors = vtk.vtkNamedColors()
+    colors.GetColorRGB("red", rgb)
+    actor.GetProperty().SetColor(rgb)
 
     # assign actor to the renderer
     ren.AddActor(actor)
