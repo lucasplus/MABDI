@@ -81,25 +81,6 @@ class _SimulateSensor(object):
             d_images[::-1, :, i] = numpy_support.vtk_to_numpy(
                 self.filter.GetOutput().GetPointData().GetScalars() 
                 ).reshape(480, 640)
-        """
-        transform = vtk.vtkTransformCoordinateSystems()
-        transform.SetInputCoordinateSystemToViewport()
-        transform.SetOutputCoordinateSystemToWorld()
-        transform.SetInput( self._pov.renderer.GetVTKWindow() )
-        transform.SetViewport( self._pov.renderer )
-        self._pov.window.Render()
-        transform.Update()
-        self._pov.window.Render()
-        transform.Update()
-        pointset = transform.GetOutput()
-
-        print(transform)
-        """
-
-        coordinate = vtk.vtkCoordinate()
-        coordinate.SetCoordinateSystemToDisplay()
-        coordinate.SetValue(300, 200)
-        xyz = coordinate.GetComputedWorldValue(self._pov.renderer)
 
         # close the render windows
         # they can be started again without reinitializing

@@ -1,5 +1,4 @@
 import vtk
-from vtk.util.misc import vtkGetDataRoot
 
 # create a rendering window and renderer
 ren = vtk.vtkRenderer()
@@ -36,8 +35,9 @@ iren.GetInteractorStyle().SetAutoAdjustCameraClippingRange(0)
 
 
 def render_point_cloud(obj, env):
+    # get the world coordinate
     pixel_index = obj.GetEventPosition()
-    iren.GetPicker().Pick(pixel_index[0], pixel_index[1], 0,ren)
+    iren.GetPicker().Pick(pixel_index[0], pixel_index[1], 0, ren)
     xyz = iren.GetPicker().GetPickPosition()
 
     # render the picked point
