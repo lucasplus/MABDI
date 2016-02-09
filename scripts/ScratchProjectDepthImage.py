@@ -43,9 +43,15 @@ actor.GetProperty().SetColor(rgb)
 
 ren.AddActor(actor)
 
+# depth_image_filter that grabs the vtkRenderWindow and returns 
+# the depth image (in this case)
+depth_image_filter = vtk.vtkWindowToImageFilter()
+depth_image_filter.SetInputBufferTypeToZBuffer()
+depth_image_filter.SetInput(ren.GetVTKWindow())
+depth_image_filter.Update()
+
 
 def render_point_cloud(obj, env):
-    this_polydata = mapper.GetInput()
     points.Reset()
     vertices.Reset()
     for x in np.arange(obj.GetSize()[0]):
@@ -55,10 +61,10 @@ def render_point_cloud(obj, env):
             pt_id = points.InsertNextPoint(xyz)
             vertices.InsertNextCell(1)
             vertices.InsertCellPoint(pt_id)
-    this_polydata.SetPoints(points)
-    this_polydata.SetVerts(vertices)
+    polydata.SetPoints(points)
+    polydata.SetVerts(vertices)
 
-    this_polydata.Modified()
+    polydata.Modified()
     mapper.Update()
 
     iren.Render()
