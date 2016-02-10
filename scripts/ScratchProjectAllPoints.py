@@ -1,6 +1,7 @@
 import vtk
 import numpy as np
 from vtk.numpy_interface import dataset_adapter as dsa
+from timeit import default_timer as timer
 
 # ren, renWin, iren - vtk rendering objects
 ren = vtk.vtkRenderer()
@@ -72,6 +73,12 @@ def project_pixel(d_x, d_y, d_z):
 
 
 def render_point_cloud(obj, env):
+
+    # (sizex, sizey) = obj.GetSize()
+    # d_p = np.ones(4, sizex*sizey)
+
+    start = timer()
+
     points.Reset()
     vertices.Reset()
     for x in np.arange(obj.GetSize()[0]):
@@ -84,12 +91,14 @@ def render_point_cloud(obj, env):
     polydata.SetPoints(points)
     polydata.SetVerts(vertices)
 
+    end = timer()
+
     polydata.Modified()
     mapper.Update()
 
     iren.Render()
 
-    print("rendered")
+    print(end-start)
 
 iren.AddObserver('UserEvent', render_point_cloud)
 
