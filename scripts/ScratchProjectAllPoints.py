@@ -5,6 +5,7 @@ from vtk.numpy_interface import algorithms as alg
 from vtk.util import numpy_support
 from timeit import default_timer as timer
 import matplotlib.pyplot as plt
+import time
 
 # ren, renWin, iren - vtk rendering objects
 ren = vtk.vtkRenderer()
@@ -64,7 +65,9 @@ dfilter = dsa.WrapDataObject(depth_image_filter.GetOutput())
 image = numpy_support.vtk_to_numpy(dfilter.PointData['ImageScalars']).reshape(300, 300)
 dfig = plt.imshow(image)
 plt.colorbar()
+time.sleep(.01)
 plt.show()
+
 
 def project_pixel(d_x, d_y, d_z):
 
@@ -113,7 +116,7 @@ def render_point_cloud(obj, env):
     depth_image_filter.Modified()
 
     dfilter = dsa.WrapDataObject(depth_image_filter.GetOutput())
-    image = numpy_support.vtk_to_numpy(dfilter.PointData['ImageScalars']).reshape(300, 300)
+    image = numpy_support.vtk_to_numpy(dfilter.PointData['ImageScalars']).reshape(sizey, sizex)
     plt.imshow(image, origin='lower')
     plt.colorbar()
     plt.show()
