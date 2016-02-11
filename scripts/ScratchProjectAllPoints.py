@@ -11,18 +11,19 @@ import matplotlib.pyplot as plt
 from timeit import default_timer as timer
 import time
 
-def CopyMatrix4x4(matrix):
+
+def vtkmatrix_to_numpy(matrix):
     """
     Copies the elements of a vtkMatrix4x4 into a numpy array.
 
-    :@type matrix: vtk.vtkMatrix4x4
-    :@param matrix: The matrix to be copied into an array.
-    :@rtype: numpy.ndarray
+    :type matrix: vtk.vtkMatrix4x4
+    :param matrix: The matrix to be copied into an array.
+    :rtype: numpy.ndarray
     """
-    m = np.ones((4,4))
+    m = np.ones((4, 4))
     for i in range(4):
         for j in range(4):
-            m[i,j] = matrix.GetElement(i,j)
+            m[i, j] = matrix.GetElement(i, j)
     return m
 
 
@@ -52,11 +53,9 @@ def project_pixel(display_pts):
         ren.GetTiledAspectRatio(),
         0.0, 1.0)
     tmat.Invert()
-    tmat = CopyMatrix4x4(tmat)
+    tmat = vtkmatrix_to_numpy(tmat)
 
     # world point
-    # world_pts = np.array(tmat.MultiplyPoint(viewport_pts))
-    # world_pts = np.zeros(viewport_pts.shape)
     world_pts = np.dot(tmat, viewport_pts)
     world_pts = world_pts / world_pts[3]
 
@@ -119,11 +118,12 @@ ren.GetActiveCamera().SetClippingRange(0.1, 10.0)
 iren.GetInteractorStyle().SetAutoAdjustCameraClippingRange(0)
 ren.GetActiveCamera().SetPosition(0.0, 0.0, 2.0)
 
-# vtk objects for the point cloud
+# for storing the point cloud
 points = vtk.vtkPoints()
 vertices = vtk.vtkCellArray()
 polydata = vtk.vtkPolyData()
 
+# for displaying the point cloud
 mapper = vtk.vtkPolyDataMapper()
 mapper.SetInputData(polydata)
 actor = vtk.vtkActor()
@@ -133,7 +133,6 @@ rgb = [0.0, 0.0, 0.0]
 colors = vtk.vtkNamedColors()
 colors.GetColorRGB("red", rgb)
 actor.GetProperty().SetColor(rgb)
-
 ren.AddActor(actor)
 
 # has to be initialized before filter is update
@@ -155,9 +154,3 @@ depth_image_filter.Modified()
 iren.AddObserver('UserEvent', render_point_cloud)
 
 iren.Start()
-
-
-
-# plt.imshow(image, origin='lower')
-# plt.colorbar()
-# plt.show()
