@@ -34,12 +34,15 @@ iren.GetInteractorStyle().SetAutoAdjustCameraClippingRange(0)
 ren.GetActiveCamera().SetPosition(0.0, 0.0, 2.0)
 
 
-def project_pixel(d_x, d_y, d_z):
+def project_pixel(display_pt):
 
-    # display to viewport value
-    ren.SetDisplayPoint(d_x, d_y, d_z)
-    ren.DisplayToView()
-    v_p = ren.GetViewPoint()
+    (sizex, sizey) = renWin.GetSize()
+    viewport = ren.GetViewport()
+
+    viewport_pt = np.ones(4)
+    viewport_pt[0] = 2.0 * (display_pt[0] - sizex*viewport[0]) / (sizex*(viewport[2]-viewport[0])) - 1.0
+    viewport_pt[1] = 2.0 * (display_pt[1] - sizey*viewport[1]) / (sizey*(viewport[3]-viewport[1])) - 1.0
+    viewport_pt[2] = display_pt[2]
 
     # transform matrix
     tmat = ren.GetActiveCamera().GetCompositeProjectionTransformMatrix(
@@ -48,10 +51,10 @@ def project_pixel(d_x, d_y, d_z):
     tmat.Invert()
 
     # world point
-    w_p = np.array(tmat.MultiplyPoint(v_p + (1.0,)))
-    w_p = w_p / w_p[3]
+    world_pt = np.array(tmat.MultiplyPoint(viewport_pt))
+    world_pt = world_pt / world_pt[3]
 
-    return w_p[0:3]
+    return world_pt[0:3]
 
 
 def render_point_cloud(obj, env):
@@ -60,7 +63,7 @@ def render_point_cloud(obj, env):
 
     # do it the hard way and compare
     z = ren.GetZ(pixel_index[0], pixel_index[1])
-    xyz = project_pixel(pixel_index[0], pixel_index[1], z)
+    xyz = project_pixel((pixel_index[0], pixel_index[1], z))
 
     # render the picked point
     source = vtk.vtkSphereSource()

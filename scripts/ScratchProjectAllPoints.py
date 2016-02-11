@@ -35,17 +35,17 @@ def project_pixel(d_x, d_y, d_z):
 def render_point_cloud(obj, env):
     start = timer()
 
+    # update filter
     depth_image_filter.Update()
     depth_image_filter.Modified()
 
+    # things to know
     (sizex, sizey) = obj.GetSize()
-    d_pts = np.ones((4, sizex*sizey))
 
     dfilter = dsa.WrapDataObject(depth_image_filter.GetOutput())
     image = numpy_support.vtk_to_numpy(dfilter.PointData['ImageScalars']).reshape((sizey, sizex))
-    plt.imshow(image, origin='lower')
-    plt.colorbar()
-    plt.show()
+
+    display_pts = np.ones((4, sizex*sizey))
 
     end = timer()
     print(end-start)
@@ -68,6 +68,7 @@ cubeActor.SetMapper(cubeMapper)
 ren.AddActor(cubeActor)
 
 # set camera intrinsic params to mimic kinect
+renWin.SetSize(640, 480)
 ren.GetActiveCamera().SetViewAngle(60.0)
 ren.GetActiveCamera().SetClippingRange(0.1, 10.0)
 iren.GetInteractorStyle().SetAutoAdjustCameraClippingRange(0)
@@ -127,3 +128,7 @@ actor.GetProperty().SetColor(rgb)
 
 ren.AddActor(actor)
 """
+
+# plt.imshow(image, origin='lower')
+# plt.colorbar()
+# plt.show()
