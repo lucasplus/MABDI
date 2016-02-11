@@ -35,7 +35,6 @@ def project_pixel(d_x, d_y, d_z):
 def render_point_cloud(obj, env):
     start = timer()
 
-    ren.Render()
     depth_image_filter.Update()
     depth_image_filter.Modified()
 
