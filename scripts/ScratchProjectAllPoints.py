@@ -11,41 +11,86 @@ import matplotlib.pyplot as plt
 from timeit import default_timer as timer
 import time
 
+def CopyMatrix4x4(matrix):
+    """
+    Copies the elements of a vtkMatrix4x4 into a numpy array.
 
-def project_pixel(d_x, d_y, d_z):
+    :@type matrix: vtk.vtkMatrix4x4
+    :@param matrix: The matrix to be copied into an array.
+    :@rtype: numpy.ndarray
+    """
+    m = np.ones((4,4))
+    for i in range(4):
+        for j in range(4):
+            m[i,j] = matrix.GetElement(i,j)
+    return m
 
-    # display to viewport value
-    ren.SetDisplayPoint(d_x, d_y, d_z)
-    ren.DisplayToView()
-    v_p = ren.GetViewPoint()
+
+def project_pixel(display_pts):
+
+    # things to know
+    (sizex, sizey) = renWin.GetSize()
+    viewport = ren.GetViewport()
+
+    # update filter
+    depth_image_filter.Update()
+    depth_image_filter.Modified()
+
+    # get depth image
+    dfilter = dsa.WrapDataObject(depth_image_filter.GetOutput())
+    image = numpy_support.vtk_to_numpy(dfilter.PointData['ImageScalars']).reshape((sizey, sizex))
+
+    display_pts[2, :] = image.ravel()
+
+    viewport_pts = np.ones((4, display_pts.shape[1]))
+    viewport_pts[0,:] = 2.0 * (display_pts[0,:] - sizex*viewport[0]) / (sizex*(viewport[2]-viewport[0])) - 1.0
+    viewport_pts[1,:] = 2.0 * (display_pts[1,:] - sizey*viewport[1]) / (sizey*(viewport[3]-viewport[1])) - 1.0
+    viewport_pts[2,:] = display_pts[2,:]
 
     # transform matrix
     tmat = ren.GetActiveCamera().GetCompositeProjectionTransformMatrix(
         ren.GetTiledAspectRatio(),
         0.0, 1.0)
     tmat.Invert()
+    tmat = CopyMatrix4x4(tmat)
 
     # world point
-    w_p = np.array(tmat.MultiplyPoint(v_p + (1.0,)))
-    w_p = w_p / w_p[3]
+    # world_pts = np.array(tmat.MultiplyPoint(viewport_pts))
+    # world_pts = np.zeros(viewport_pts.shape)
+    world_pts = np.dot(tmat, viewport_pts)
+    world_pts = world_pts / world_pts[3]
 
-    return w_p[0:3]
+    return world_pts[0:3, :]
 
 
 def render_point_cloud(obj, env):
     start = timer()
 
-    # update filter
-    depth_image_filter.Update()
-    depth_image_filter.Modified()
-
     # things to know
     (sizex, sizey) = obj.GetSize()
 
-    dfilter = dsa.WrapDataObject(depth_image_filter.GetOutput())
-    image = numpy_support.vtk_to_numpy(dfilter.PointData['ImageScalars']).reshape((sizey, sizex))
-
     display_pts = np.ones((4, sizex*sizey))
+    count = 0
+    for i in np.arange(sizey):
+        for j in np.arange(sizex):
+            display_pts[0, count] = j
+            display_pts[1, count] = i
+            count += 1
+
+    pc = project_pixel(display_pts)
+
+    points.Reset()
+    vertices.Reset()
+    for i in np.arange(pc.shape[1]):
+        pt_id = points.InsertNextPoint(pc[:, i])
+        vertices.InsertNextCell(1)
+        vertices.InsertCellPoint(pt_id)
+    polydata.SetPoints(points)
+    polydata.SetVerts(vertices)
+    polydata.Modified()
+    mapper.Update()
+
+    iren.Render()
 
     end = timer()
     print(end-start)
@@ -68,7 +113,7 @@ cubeActor.SetMapper(cubeMapper)
 ren.AddActor(cubeActor)
 
 # set camera intrinsic params to mimic kinect
-renWin.SetSize(640, 480)
+renWin.SetSize(300, 300)
 ren.GetActiveCamera().SetViewAngle(60.0)
 ren.GetActiveCamera().SetClippingRange(0.1, 10.0)
 iren.GetInteractorStyle().SetAutoAdjustCameraClippingRange(0)
@@ -78,6 +123,18 @@ ren.GetActiveCamera().SetPosition(0.0, 0.0, 2.0)
 points = vtk.vtkPoints()
 vertices = vtk.vtkCellArray()
 polydata = vtk.vtkPolyData()
+
+mapper = vtk.vtkPolyDataMapper()
+mapper.SetInputData(polydata)
+actor = vtk.vtkActor()
+actor.SetMapper(mapper)
+actor.GetProperty().SetPointSize(2)
+rgb = [0.0, 0.0, 0.0]
+colors = vtk.vtkNamedColors()
+colors.GetColorRGB("red", rgb)
+actor.GetProperty().SetColor(rgb)
+
+ren.AddActor(actor)
 
 # has to be initialized before filter is update
 # not sure why
@@ -99,35 +156,7 @@ iren.AddObserver('UserEvent', render_point_cloud)
 
 iren.Start()
 
-"""
-    points.Reset()
-    vertices.Reset()
-    for x in np.arange(obj.GetSize()[0]):
-        for y in np.arange(obj.GetSize()[1]):
-            z = ren.GetZ(x, y)
-            xyz = project_pixel(x, y, z)
-            pt_id = points.InsertNextPoint(xyz)
-            vertices.InsertNextCell(1)
-            vertices.InsertCellPoint(pt_id)
-    polydata.SetPoints(points)
-    polydata.SetVerts(vertices)
-    polydata.Modified()
-    mapper.Update()
-"""
 
-"""
-mapper = vtk.vtkPolyDataMapper()
-mapper.SetInputData(polydata)
-actor = vtk.vtkActor()
-actor.SetMapper(mapper)
-actor.GetProperty().SetPointSize(2)
-rgb = [0.0, 0.0, 0.0]
-colors = vtk.vtkNamedColors()
-colors.GetColorRGB("red", rgb)
-actor.GetProperty().SetColor(rgb)
-
-ren.AddActor(actor)
-"""
 
 # plt.imshow(image, origin='lower')
 # plt.colorbar()
