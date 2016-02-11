@@ -113,7 +113,7 @@ cubeActor.SetMapper(cubeMapper)
 ren.AddActor(cubeActor)
 
 # set camera intrinsic params to mimic kinect
-renWin.SetSize(300, 300)
+renWin.SetSize(640, 480)
 ren.GetActiveCamera().SetViewAngle(60.0)
 ren.GetActiveCamera().SetClippingRange(0.1, 10.0)
 iren.GetInteractorStyle().SetAutoAdjustCameraClippingRange(0)
