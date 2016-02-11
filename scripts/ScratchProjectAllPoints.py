@@ -1,7 +1,10 @@
 import vtk
 import numpy as np
 from vtk.numpy_interface import dataset_adapter as dsa
+from vtk.numpy_interface import algorithms as alg
+from vtk.util import numpy_support
 from timeit import default_timer as timer
+import matplotlib.pyplot as plt
 
 # ren, renWin, iren - vtk rendering objects
 ren = vtk.vtkRenderer()
@@ -32,6 +35,7 @@ iren.GetInteractorStyle().SetAutoAdjustCameraClippingRange(0)
 points = vtk.vtkPoints()
 vertices = vtk.vtkCellArray()
 polydata = vtk.vtkPolyData()
+"""
 mapper = vtk.vtkPolyDataMapper()
 mapper.SetInputData(polydata)
 actor = vtk.vtkActor()
@@ -43,14 +47,24 @@ colors.GetColorRGB("red", rgb)
 actor.GetProperty().SetColor(rgb)
 
 ren.AddActor(actor)
+"""
+
+iren.Initialize()
+renWin.Render()
+renWin.Render()
 
 # depth_image_filter that grabs the vtkRenderWindow and returns 
 # the depth image (in this case)
-# depth_image_filter = vtk.vtkWindowToImageFilter()
-# depth_image_filter.SetInputBufferTypeToZBuffer()
-# depth_image_filter.SetInput(ren.GetVTKWindow())
-# depth_image_filter.Update()
+depth_image_filter = vtk.vtkWindowToImageFilter()
+depth_image_filter.SetInputBufferTypeToZBuffer()
+depth_image_filter.SetInput(ren.GetVTKWindow())
+depth_image_filter.Update()
 
+dfilter = dsa.WrapDataObject(depth_image_filter.GetOutput())
+image = numpy_support.vtk_to_numpy(dfilter.PointData['ImageScalars']).reshape(300, 300)
+dfig = plt.imshow(image)
+plt.colorbar()
+plt.show()
 
 def project_pixel(d_x, d_y, d_z):
 
@@ -73,12 +87,12 @@ def project_pixel(d_x, d_y, d_z):
 
 
 def render_point_cloud(obj, env):
-
-    # (sizex, sizey) = obj.GetSize()
-    # d_p = np.ones(4, sizex*sizey)
-
     start = timer()
 
+    (sizex, sizey) = obj.GetSize()
+    d_pts = np.ones((4, sizex*sizey))
+
+    """
     points.Reset()
     vertices.Reset()
     for x in np.arange(obj.GetSize()[0]):
@@ -90,19 +104,25 @@ def render_point_cloud(obj, env):
             vertices.InsertCellPoint(pt_id)
     polydata.SetPoints(points)
     polydata.SetVerts(vertices)
-
-    end = timer()
-
     polydata.Modified()
     mapper.Update()
+    """
 
     iren.Render()
+    depth_image_filter.Update()
+    depth_image_filter.Modified()
 
+    dfilter = dsa.WrapDataObject(depth_image_filter.GetOutput())
+    image = numpy_support.vtk_to_numpy(dfilter.PointData['ImageScalars']).reshape(300, 300)
+    plt.imshow(image, origin='lower')
+    plt.colorbar()
+    plt.show()
+
+    end = timer()
     print(end-start)
 
 iren.AddObserver('UserEvent', render_point_cloud)
 
 # enable user interface interactor
-iren.Initialize()
-renWin.Render()
+
 iren.Start()
