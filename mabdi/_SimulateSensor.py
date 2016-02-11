@@ -56,8 +56,6 @@ class _SimulateSensor(object):
         self._pov.renderer.GetActiveCamera().SetClippingRange(0.5, 10.0)
 
     def move_camera(self, in_position, in_lookat):
-        # TODO: make sure in_position and in_lookat are the same size
-        # TODO: make sure arguments are of size Nx3
 
         # TODO: exception here I think
         if in_position.shape != in_lookat.shape:
