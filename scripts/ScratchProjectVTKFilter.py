@@ -16,146 +16,116 @@ import time
 from vtk.util.vtkAlgorithm import VTKPythonAlgorithmBase
 
 
-class ContourShrink(VTKPythonAlgorithmBase):
+class ProjectDepthImage(VTKPythonAlgorithmBase):
     def __init__(self):
         VTKPythonAlgorithmBase.__init__(self,
-                                        nInputPorts=1, inputType='vtkDataSet',
-                                        nOutputPorts = 1, outputType = 'vtkPolyData')
-        self.__ShrinkFactor = 0.5
-        self.__ContourValue = 200
+                                        nInputPorts=1, inputType='vtkImageData',
+                                        nOutputPorts=1, outputType='vtkPolyData')
+        self.__ren = []
+        self.__renWin = []
 
+        self.__display_pts = []
+        self.__viewport_pts = []
+        self.__world_pts = []
+        self.__sizex = []
+        self.__sizey = []
 
-    def SetShrinkFactor(self, factor):
-        if factor != self.__ShrinkFactor:
-            self.__ShrinkFactor = factor
+    def SetRenderer(self, renderer):
+        if renderer != self.__ren:
+            self.__ren = renderer
             self.Modified()
 
+    def GetRenderer(self):
+        return self.__ren
 
-    def GetShrinkFactor(self):
-        return self.__ShrinkFactor
-
-
-    def SetContourValue(self, value):
-        if value != self.__ContourValue:
-            self.__ContourValue = value
+    def SetRenderWindow(self, render_window):
+        if render_window != self.__renWin:
+            self.__renWin = render_window
             self.Modified()
 
-
-    def GetContourValue(self):
-        return self.__ContourValue
-
+    def GetRenderWindow(self):
+        return self.__renWin
 
     def RequestData(self, request, inInfo, outInfo):
         print 'Executing'
 
-        inp = vtk.vtkDataSet.GetData(inInfo[0])
-        opt = vtk.vtkPolyData.GetData(outInfo)
-        cf = vtk.vtkContourFilter()
-        cf.SetInputData(inp)
-        cf.SetValue(0, self.__ContourValue)
-        sf = vtk.vtkShrinkPolyData()
-        sf.SetShrinkFactor(self.__ShrinkFactor)
-        sf.SetInputConnection(cf.GetOutputPort())
-        sf.Update()
+        # things to know
+        # (sizex, sizey) = self.__renWin.GetSize()
 
-        opt.ShallowCopy(sf.GetOutput())
+        inp = dsa.WrapDataObject(vtk.vtkImageData.GetData(inInfo[0]))
+        depth = numpy_support.vtk_to_numpy(inp.PointData['ImageScalars'])
+        self.__update_viewport_points(depth)
+        # transformation matrix, viewport coordinates -> world coordinates
+        tmat = ren.GetActiveCamera().GetCompositeProjectionTransformMatrix(
+            ren.GetTiledAspectRatio(),
+            0.0, 1.0)
+        tmat.Invert()
+        tmat = self.__vtkmatrix_to_numpy(tmat)
+        self.__world_pts = np.dot(tmat, self.__viewport_pts)
+        self.__world_pts = self.__world_pts / self.__world_pts[3]
+
+        # for storing the point cloud
+        points = vtk.vtkPoints()
+        vertices = vtk.vtkCellArray()
+        polydata = vtk.vtkPolyData()
+        out = vtk.vtkPolyData.GetData(outInfo)
+        for i in np.arange(self.__world_pts.shape[1]):
+            pt_id = points.InsertNextPoint(self.__world_pts[0:3, i])
+            vertices.InsertNextCell(1)
+            vertices.InsertCellPoint(pt_id)
+        polydata.SetPoints(points)
+        polydata.SetVerts(vertices)
+        out.ShallowCopy(polydata)
 
         return 1
 
-w = vtk.vtkRTAnalyticSource()
+    def __update_viewport_points(self, depth):
+        # if the render windows size has not changed, just return
+        if (self.__sizex, self.__sizey) == self.__renWin.GetSize():
+            self.__viewport_pts[2, :] = depth
+            return
 
-pa = ContourShrink()
-pa.SetInputConnection(w.GetOutputPort())
+        # save the new size
+        (self.__sizex, self.__sizey) = self.__renWin.GetSize()
+        # new display points
+        self.__display_pts = np.ones((2, self.__sizex*self.__sizey))
+        count = 0
+        for i in np.arange(self.__sizey):
+            for j in np.arange(self.__sizex):
+                self.__display_pts[0, count] = j
+                self.__display_pts[1, count] = i
+                count += 1
+        # new viewport points
+        viewport = self.__ren.GetViewport()
+        self.__viewport_pts = np.ones((4, self.__display_pts.shape[1]))
+        self.__viewport_pts[0,:] = 2.0 * (self.__display_pts[0,:] - self.__sizex*viewport[0]) / (self.__sizex*(viewport[2]-viewport[0])) - 1.0
+        self.__viewport_pts[1,:] = 2.0 * (self.__display_pts[1,:] - self.__sizey*viewport[1]) / (self.__sizey*(viewport[3]-viewport[1])) - 1.0
+        self.__viewport_pts[2,:] = depth
+        # new world points (of the right size)
+        self.__world_pts = np.ones(self.__viewport_pts.shape)
 
-pa.Update()
-print pa.GetOutputDataObject(0).GetClassName()
-print pa.GetOutputDataObject(0).GetNumberOfCells()
+    def __vtkmatrix_to_numpy(self, matrix):
+        """
+        Copies the elements of a vtkMatrix4x4 into a numpy array.
 
-pa.SetShrinkFactor(0.7)
-pa.SetContourValue(100)
-pa.Update()
-print pa.GetOutputDataObject(0).GetClassName()
-print pa.GetOutputDataObject(0).GetNumberOfCells()
-
-
-def vtkmatrix_to_numpy(matrix):
-    """
-    Copies the elements of a vtkMatrix4x4 into a numpy array.
-
-    :type matrix: vtk.vtkMatrix4x4
-    :param matrix: The matrix to be copied into an array.
-    :rtype: numpy.ndarray
-    """
-    m = np.ones((4, 4))
-    for i in range(4):
-        for j in range(4):
-            m[i, j] = matrix.GetElement(i, j)
-    return m
-
-
-def project_pixel(display_pts):
-
-    # things to know
-    (sizex, sizey) = renWin.GetSize()
-    viewport = ren.GetViewport()
-
-    # update filter
-    depth_image_filter.Update()
-    depth_image_filter.Modified()
-
-    # get depth image
-    dfilter = dsa.WrapDataObject(depth_image_filter.GetOutput())
-    image = numpy_support.vtk_to_numpy(dfilter.PointData['ImageScalars']).reshape((sizey, sizex))
-
-    display_pts[2, :] = image.ravel()
-
-    viewport_pts = np.ones((4, display_pts.shape[1]))
-    viewport_pts[0,:] = 2.0 * (display_pts[0,:] - sizex*viewport[0]) / (sizex*(viewport[2]-viewport[0])) - 1.0
-    viewport_pts[1,:] = 2.0 * (display_pts[1,:] - sizey*viewport[1]) / (sizey*(viewport[3]-viewport[1])) - 1.0
-    viewport_pts[2,:] = display_pts[2,:]
-
-    # transform matrix
-    tmat = ren.GetActiveCamera().GetCompositeProjectionTransformMatrix(
-        ren.GetTiledAspectRatio(),
-        0.0, 1.0)
-    tmat.Invert()
-    tmat = vtkmatrix_to_numpy(tmat)
-
-    # world point
-    world_pts = np.dot(tmat, viewport_pts)
-    world_pts = world_pts / world_pts[3]
-
-    return world_pts[0:3, :]
+        :type matrix: vtk.vtkMatrix4x4
+        :param matrix: The matrix to be copied into an array.
+        :rtype: numpy.ndarray
+        """
+        m = np.ones((4, 4))
+        for i in range(4):
+            for j in range(4):
+                m[i, j] = matrix.GetElement(i, j)
+        return m
 
 
 def render_point_cloud(obj, env):
     start = timer()
 
-    # things to know
-    (sizex, sizey) = obj.GetSize()
+    dif.Modified()
+    pdi.Update()
 
-    display_pts = np.ones((4, sizex*sizey))
-    count = 0
-    for i in np.arange(sizey):
-        for j in np.arange(sizex):
-            display_pts[0, count] = j
-            display_pts[1, count] = i
-            count += 1
-
-    pc = project_pixel(display_pts)
-
-    points.Reset()
-    vertices.Reset()
-    for i in np.arange(pc.shape[1]):
-        pt_id = points.InsertNextPoint(pc[:, i])
-        vertices.InsertNextCell(1)
-        vertices.InsertCellPoint(pt_id)
-    polydata.SetPoints(points)
-    polydata.SetVerts(vertices)
-    polydata.Modified()
-    mapper.Update()
-
-    iren.Render()
+    #ren.Render()
 
     end = timer()
     print(end-start)
@@ -184,14 +154,29 @@ ren.GetActiveCamera().SetClippingRange(0.1, 10.0)
 iren.GetInteractorStyle().SetAutoAdjustCameraClippingRange(0)
 ren.GetActiveCamera().SetPosition(0.0, 0.0, 2.0)
 
-# for storing the point cloud
-points = vtk.vtkPoints()
-vertices = vtk.vtkCellArray()
-polydata = vtk.vtkPolyData()
+# has to be initialized before filter is update
+# not sure why
+iren.Initialize()
+
+# dif (depth image filter)
+# Filter that grabs the vtkRenderWindow and returns
+# the depth image (in this case)
+dif = vtk.vtkWindowToImageFilter()
+dif.SetInputBufferTypeToZBuffer()
+dif.SetInput(ren.GetVTKWindow())
+dif.Update()
+
+# pdi (project depth image)
+# Gets output of dif and projects the coordinates into world coordinate system
+pdi = ProjectDepthImage()
+pdi.SetRenderer(ren)
+pdi.SetRenderWindow(renWin)
+pdi.SetInputConnection(dif.GetOutputPort())
+pdi.Update()
 
 # for displaying the point cloud
 mapper = vtk.vtkPolyDataMapper()
-mapper.SetInputData(polydata)
+mapper.SetInputConnection(pdi.GetOutputPort())
 actor = vtk.vtkActor()
 actor.SetMapper(mapper)
 actor.GetProperty().SetPointSize(2)
@@ -201,22 +186,12 @@ colors.GetColorRGB("red", rgb)
 actor.GetProperty().SetColor(rgb)
 ren.AddActor(actor)
 
-# has to be initialized before filter is update
-# not sure why
-iren.Initialize()
-
-# depth_image_filter that grabs the vtkRenderWindow and returns
-# the depth image (in this case)
-depth_image_filter = vtk.vtkWindowToImageFilter()
-depth_image_filter.SetInputBufferTypeToZBuffer()
-depth_image_filter.SetInput(ren.GetVTKWindow())
-depth_image_filter.Update()
-
 # needed for first image in loop to be current
 ren.Render()
-depth_image_filter.Update()
-depth_image_filter.Modified()
+dif.Update()
+dif.Modified()
 
+pdi.Update()
 iren.AddObserver('UserEvent', render_point_cloud)
 
 iren.Start()
