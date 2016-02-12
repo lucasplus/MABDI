@@ -49,18 +49,21 @@ class ProjectDepthImage(VTKPythonAlgorithmBase):
     def RequestData(self, request, inInfo, outInfo):
         print 'Executing'
 
-        # things to know
-        # (sizex, sizey) = self.__renWin.GetSize()
-
+        # all the depth values
         inp = dsa.WrapDataObject(vtk.vtkImageData.GetData(inInfo[0]))
         depth = numpy_support.vtk_to_numpy(inp.PointData['ImageScalars'])
+
+        # update the viewport points, check to see if render window size has changed
         self.__update_viewport_points(depth)
+
         # transformation matrix, viewport coordinates -> world coordinates
         tmat = ren.GetActiveCamera().GetCompositeProjectionTransformMatrix(
             ren.GetTiledAspectRatio(),
             0.0, 1.0)
         tmat.Invert()
         tmat = self.__vtkmatrix_to_numpy(tmat)
+
+        # project to world coordinates
         self.__world_pts = np.dot(tmat, self.__viewport_pts)
         self.__world_pts = self.__world_pts / self.__world_pts[3]
 
@@ -125,7 +128,7 @@ def render_point_cloud(obj, env):
     dif.Modified()
     pdi.Update()
 
-    #ren.Render()
+    # ren.Render()
 
     end = timer()
     print(end-start)
