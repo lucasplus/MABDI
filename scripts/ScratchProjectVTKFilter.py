@@ -128,8 +128,6 @@ def render_point_cloud(obj, env):
     dif.Modified()
     pdi.Update()
 
-    # ren.Render()
-
     end = timer()
     print(end-start)
 
@@ -191,10 +189,9 @@ ren.AddActor(actor)
 
 # needed for first image in loop to be current
 ren.Render()
-dif.Update()
 dif.Modified()
-
 pdi.Update()
+
 iren.AddObserver('UserEvent', render_point_cloud)
 
 iren.Start()
