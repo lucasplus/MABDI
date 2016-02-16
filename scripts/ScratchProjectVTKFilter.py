@@ -29,6 +29,7 @@ class ProjectDepthImage(VTKPythonAlgorithmBase):
         self.__world_pts = []
         self.__sizex = []
         self.__sizey = []
+        self.__polydata = vtk.vtkPolyData()
 
     def SetRenderer(self, renderer):
         if renderer != self.__ren:
@@ -67,18 +68,12 @@ class ProjectDepthImage(VTKPythonAlgorithmBase):
         self.__world_pts = np.dot(tmat, self.__viewport_pts)
         self.__world_pts = self.__world_pts / self.__world_pts[3]
 
-        # for storing the point cloud
-        points = vtk.vtkPoints()
-        vertices = vtk.vtkCellArray()
-        polydata = vtk.vtkPolyData()
+        # update polydata
+        self.__update_polydata()
         out = vtk.vtkPolyData.GetData(outInfo)
-        for i in np.arange(self.__world_pts.shape[1]):
-            pt_id = points.InsertNextPoint(self.__world_pts[0:3, i])
-            vertices.InsertNextCell(1)
-            vertices.InsertCellPoint(pt_id)
-        polydata.SetPoints(points)
-        polydata.SetVerts(vertices)
-        out.ShallowCopy(polydata)
+        out.ShallowCopy(self.__polydata)
+
+        print(out.GetNumberOfPoints())
 
         return 1
 
@@ -106,6 +101,24 @@ class ProjectDepthImage(VTKPythonAlgorithmBase):
         self.__viewport_pts[2,:] = depth
         # new world points (of the right size)
         self.__world_pts = np.ones(self.__viewport_pts.shape)
+
+    def __update_polydata(self):
+        # if the window size hasn't changed we can keep the old vtkCellArray
+        if self.__polydata.GetNumberOfPoints() == self.__world_pts.shape[1]:
+            points = vtk.vtkPoints()
+            vtkarray = dsa.numpyTovtkDataArray(self.__world_pts[0:3, :].T)
+            points.SetData(vtkarray)
+            self.__polydata.SetPoints(points)
+        else:
+            # for storing the point cloud
+            points = vtk.vtkPoints()
+            vertices = vtk.vtkCellArray()
+            for i in np.arange(self.__world_pts.shape[1]):
+                pt_id = points.InsertNextPoint(self.__world_pts[0:3, i])
+                vertices.InsertNextCell(1)
+                vertices.InsertCellPoint(pt_id)
+            self.__polydata.SetPoints(points)
+            self.__polydata.SetVerts(vertices)
 
     def __vtkmatrix_to_numpy(self, matrix):
         """
