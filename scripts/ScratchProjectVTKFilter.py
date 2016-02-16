@@ -11,7 +11,6 @@ import matplotlib.pyplot as plt
 from timeit import default_timer as timer
 import time
 
-
 # import vtk
 from vtk.util.vtkAlgorithm import VTKPythonAlgorithmBase
 
@@ -24,65 +23,30 @@ class ProjectDepthImage(VTKPythonAlgorithmBase):
         self.__ren = []
         self.__renWin = []
 
+        self.__sizex = []
+        self.__sizey = []
+
         self.__display_pts = []
         self.__viewport_pts = []
         self.__world_pts = []
-        self.__sizex = []
-        self.__sizey = []
         self.__polydata = vtk.vtkPolyData()
 
-    def SetRenderer(self, renderer):
+    def SetRendererAndRenderWindow(self, renderer, render_window):
         if renderer != self.__ren:
             self.__ren = renderer
+            self.Modified()
+        if render_window != self.__renWin:
+            self.__renWin = render_window
+            self.__initialize_containers()
             self.Modified()
 
     def GetRenderer(self):
         return self.__ren
 
-    def SetRenderWindow(self, render_window):
-        if render_window != self.__renWin:
-            self.__renWin = render_window
-            self.Modified()
-
     def GetRenderWindow(self):
         return self.__renWin
 
-    def RequestData(self, request, inInfo, outInfo):
-        print 'Executing'
-
-        # all the depth values
-        inp = dsa.WrapDataObject(vtk.vtkImageData.GetData(inInfo[0]))
-        depth = numpy_support.vtk_to_numpy(inp.PointData['ImageScalars'])
-
-        # update the viewport points, check to see if render window size has changed
-        self.__update_viewport_points(depth)
-
-        # transformation matrix, viewport coordinates -> world coordinates
-        tmat = ren.GetActiveCamera().GetCompositeProjectionTransformMatrix(
-            ren.GetTiledAspectRatio(),
-            0.0, 1.0)
-        tmat.Invert()
-        tmat = self.__vtkmatrix_to_numpy(tmat)
-
-        # project to world coordinates
-        self.__world_pts = np.dot(tmat, self.__viewport_pts)
-        self.__world_pts = self.__world_pts / self.__world_pts[3]
-
-        # update polydata
-        self.__update_polydata()
-        out = vtk.vtkPolyData.GetData(outInfo)
-        out.ShallowCopy(self.__polydata)
-
-        print(out.GetNumberOfPoints())
-
-        return 1
-
-    def __update_viewport_points(self, depth):
-        # if the render windows size has not changed, just return
-        if (self.__sizex, self.__sizey) == self.__renWin.GetSize():
-            self.__viewport_pts[2, :] = depth
-            return
-
+    def __initialize_containers(self):
         # save the new size
         (self.__sizex, self.__sizey) = self.__renWin.GetSize()
         # new display points
@@ -98,27 +62,48 @@ class ProjectDepthImage(VTKPythonAlgorithmBase):
         self.__viewport_pts = np.ones((4, self.__display_pts.shape[1]))
         self.__viewport_pts[0,:] = 2.0 * (self.__display_pts[0,:] - self.__sizex*viewport[0]) / (self.__sizex*(viewport[2]-viewport[0])) - 1.0
         self.__viewport_pts[1,:] = 2.0 * (self.__display_pts[1,:] - self.__sizey*viewport[1]) / (self.__sizey*(viewport[3]-viewport[1])) - 1.0
-        self.__viewport_pts[2,:] = depth
         # new world points (of the right size)
         self.__world_pts = np.ones(self.__viewport_pts.shape)
+        # initialize vtkPolyData
+        points = vtk.vtkPoints()
+        vertices = vtk.vtkCellArray()
+        for i in np.arange(self.__world_pts.shape[1]):
+            pt_id = points.InsertNextPoint(self.__world_pts[0:3, i])
+            vertices.InsertNextCell(1)
+            vertices.InsertCellPoint(pt_id)
+        self.__polydata.SetPoints(points)
+        self.__polydata.SetVerts(vertices)
 
-    def __update_polydata(self):
-        # if the window size hasn't changed we can keep the old vtkCellArray
-        if self.__polydata.GetNumberOfPoints() == self.__world_pts.shape[1]:
-            points = vtk.vtkPoints()
-            vtkarray = dsa.numpyTovtkDataArray(self.__world_pts[0:3, :].T)
-            points.SetData(vtkarray)
-            self.__polydata.SetPoints(points)
-        else:
-            # for storing the point cloud
-            points = vtk.vtkPoints()
-            vertices = vtk.vtkCellArray()
-            for i in np.arange(self.__world_pts.shape[1]):
-                pt_id = points.InsertNextPoint(self.__world_pts[0:3, i])
-                vertices.InsertNextCell(1)
-                vertices.InsertCellPoint(pt_id)
-            self.__polydata.SetPoints(points)
-            self.__polydata.SetVerts(vertices)
+    def RequestData(self, request, inInfo, outInfo):
+        print 'Executing'
+
+        # all the depth values
+        inp = dsa.WrapDataObject(vtk.vtkImageData.GetData(inInfo[0]))
+        depth = numpy_support.vtk_to_numpy(inp.PointData['ImageScalars'])
+
+        # update the viewport points, check to see if render window size has changed
+        self.__viewport_pts[2, :] = depth
+
+        # transformation matrix, viewport coordinates -> world coordinates
+        tmat = ren.GetActiveCamera().GetCompositeProjectionTransformMatrix(
+            ren.GetTiledAspectRatio(),
+            0.0, 1.0)
+        tmat.Invert()
+        tmat = self.__vtkmatrix_to_numpy(tmat)
+
+        # project to world coordinates
+        self.__world_pts = np.dot(tmat, self.__viewport_pts)
+        self.__world_pts = self.__world_pts / self.__world_pts[3]
+
+        # update polydata
+        points = vtk.vtkPoints()
+        vtkarray = dsa.numpyTovtkDataArray(self.__world_pts[0:3, :].T)
+        points.SetData(vtkarray)
+        self.__polydata.SetPoints(points)
+        out = vtk.vtkPolyData.GetData(outInfo)
+        out.ShallowCopy(self.__polydata)
+
+        return 1
 
     def __vtkmatrix_to_numpy(self, matrix):
         """
@@ -183,8 +168,7 @@ dif.Update()
 # pdi (project depth image)
 # Gets output of dif and projects the coordinates into world coordinate system
 pdi = ProjectDepthImage()
-pdi.SetRenderer(ren)
-pdi.SetRenderWindow(renWin)
+pdi.SetRendererAndRenderWindow(ren, renWin)
 pdi.SetInputConnection(dif.GetOutputPort())
 pdi.Update()
 
