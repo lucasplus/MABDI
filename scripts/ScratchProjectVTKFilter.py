@@ -34,11 +34,10 @@ class ProjectDepthImage(VTKPythonAlgorithmBase):
     def SetRendererAndRenderWindow(self, renderer, render_window):
         if renderer != self.__ren:
             self.__ren = renderer
-            self.Modified()
         if render_window != self.__renWin:
             self.__renWin = render_window
-            self.__initialize_containers()
-            self.Modified()
+        self.Modified()
+        self.__initialize_containers()
 
     def GetRenderer(self):
         return self.__ren
