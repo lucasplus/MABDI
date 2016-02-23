@@ -1,21 +1,12 @@
 import vtk
-
+from vtk.util.vtkAlgorithm import VTKPythonAlgorithmBase
 from vtk.util import numpy_support
 from vtk.numpy_interface import dataset_adapter as dsa
 from vtk.numpy_interface import algorithms as alg
-
 import numpy as np
 
-import matplotlib.pyplot as plt
 
-from timeit import default_timer as timer
-import time
-
-# import vtk
-from vtk.util.vtkAlgorithm import VTKPythonAlgorithmBase
-
-
-class ProjectDepthImage(VTKPythonAlgorithmBase):
+class PointCloudFilter(VTKPythonAlgorithmBase):
     def __init__(self):
         VTKPythonAlgorithmBase.__init__(self,
                                         nInputPorts=1, inputType='vtkImageData',
@@ -76,7 +67,7 @@ class ProjectDepthImage(VTKPythonAlgorithmBase):
         self.__polydata.SetVerts(vertices)
 
     def RequestData(self, request, inInfo, outInfo):
-        print 'Executing'
+        print 'PointCloudFilter RequestData'
 
         # all the depth values
         inp = dsa.WrapDataObject(vtk.vtkImageData.GetData(inInfo[0]))
@@ -86,8 +77,8 @@ class ProjectDepthImage(VTKPythonAlgorithmBase):
         self.__viewport_pts[2, :] = depth
 
         # transformation matrix, viewport coordinates -> world coordinates
-        tmat = ren.GetActiveCamera().GetCompositeProjectionTransformMatrix(
-            ren.GetTiledAspectRatio(),
+        tmat = self.__ren.GetActiveCamera().GetCompositeProjectionTransformMatrix(
+            self.__ren.GetTiledAspectRatio(),
             0.0, 1.0)
         tmat.Invert()
         tmat = self.__vtkmatrix_to_numpy(tmat)
@@ -120,76 +111,3 @@ class ProjectDepthImage(VTKPythonAlgorithmBase):
                 m[i, j] = matrix.GetElement(i, j)
         return m
 
-
-def render_point_cloud(obj, env):
-    start = timer()
-
-    dif.Modified()
-    pdi.Update()
-
-    end = timer()
-    print(end - start)
-
-
-# ren, renWin, iren - vtk rendering objects
-ren = vtk.vtkRenderer()
-renWin = vtk.vtkRenderWindow()
-renWin.AddRenderer(ren)
-iren = vtk.vtkRenderWindowInteractor()
-iren.SetRenderWindow(renWin)
-
-# create cube
-cube = vtk.vtkCubeSource()
-cube.SetCenter(0, 0, 0)
-cubeMapper = vtk.vtkPolyDataMapper()
-cubeMapper.SetInputConnection(cube.GetOutputPort())
-cubeActor = vtk.vtkActor()
-cubeActor.SetMapper(cubeMapper)
-ren.AddActor(cubeActor)
-
-# set camera intrinsic params to mimic kinect
-renWin.SetSize(640, 480)
-ren.GetActiveCamera().SetViewAngle(60.0)
-ren.GetActiveCamera().SetClippingRange(0.1, 10.0)
-iren.GetInteractorStyle().SetAutoAdjustCameraClippingRange(0)
-ren.GetActiveCamera().SetPosition(0.0, 0.0, 2.0)
-
-# has to be initialized before filter is update
-# not sure why
-iren.Initialize()
-
-# dif (depth image filter)
-# Filter that grabs the vtkRenderWindow and returns
-# the depth image (in this case)
-dif = vtk.vtkWindowToImageFilter()
-dif.SetInputBufferTypeToZBuffer()
-dif.SetInput(ren.GetVTKWindow())
-dif.Update()
-
-# pdi (project depth image)
-# Gets output of dif and projects the coordinates into world coordinate system
-pdi = ProjectDepthImage()
-pdi.SetRendererAndRenderWindow(ren, renWin)
-pdi.SetInputConnection(dif.GetOutputPort())
-pdi.Update()
-
-# for displaying the point cloud
-mapper = vtk.vtkPolyDataMapper()
-mapper.SetInputConnection(pdi.GetOutputPort())
-actor = vtk.vtkActor()
-actor.SetMapper(mapper)
-actor.GetProperty().SetPointSize(2)
-rgb = [0.0, 0.0, 0.0]
-colors = vtk.vtkNamedColors()
-colors.GetColorRGB("red", rgb)
-actor.GetProperty().SetColor(rgb)
-ren.AddActor(actor)
-
-# needed for first image in loop to be current
-ren.Render()
-dif.Modified()
-pdi.Update()
-
-iren.AddObserver('UserEvent', render_point_cloud)
-
-iren.Start()
