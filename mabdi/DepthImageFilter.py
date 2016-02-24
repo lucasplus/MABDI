@@ -47,7 +47,7 @@ class DepthImageFilter(VTKPythonAlgorithmBase):
     def RequestInformation(self, request, inInfo, outInfo):
         logging.debug('')
         size = self._renWin.GetSize()
-        extent = (0, size[0]-1, 0, size[1]-1, 0, 0)
+        extent = (0, size[0] - 1, 0, size[1] - 1, 0, 0)
         info = outInfo.GetInformationObject(0)
         info.Set(vtk.vtkStreamingDemandDrivenPipeline.WHOLE_EXTENT(),
                  extent, len(extent))
@@ -69,6 +69,35 @@ class DepthImageFilter(VTKPythonAlgorithmBase):
         out.SetExtent(ue)
 
         end = timer()
-        logging.debug('Execution time {:.4f} seconds'.format(end-start))
+        logging.debug('Execution time {:.4f} seconds'.format(end - start))
+
+        return 1
+
+
+class ImagePassthroughFilter(VTKPythonAlgorithmBase):
+    def __init__(self):
+        VTKPythonAlgorithmBase.__init__(self,
+                                        nInputPorts=1, inputType='vtkImageData',
+                                        nOutputPorts=1, outputType='vtkImageData')
+
+    def RequestInformation(self, request, inInfo, outInfo):
+        logging.debug('ImagePassthroughFilter')
+        extent = (0, 639, 0, 479, 0, 0)
+        info = outInfo.GetInformationObject(0)
+        info.Set(vtk.vtkStreamingDemandDrivenPipeline.WHOLE_EXTENT(),
+                 extent, len(extent))
+        return 1
+
+    def RequestData(self, request, inInfo, outInfo):
+        logging.debug('ImagePassthroughFilter')
+        start = timer()
+
+        inImageData = vtk.vtkImageData.GetData(inInfo[0])
+
+        out = vtk.vtkImageData.GetData(outInfo)
+        out.DeepCopy(inImageData)
+
+        end = timer()
+        logging.debug('Execution time {:.4f} seconds'.format(end - start))
 
         return 1
