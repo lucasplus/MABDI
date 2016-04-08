@@ -4,6 +4,7 @@ from vtk.util import numpy_support
 from vtk.numpy_interface import dataset_adapter as dsa
 from vtk.numpy_interface import algorithms as alg
 
+from timeit import default_timer as timer
 import logging
 
 

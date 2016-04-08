@@ -7,7 +7,6 @@ from vtk.numpy_interface import algorithms as alg
 import numpy as np
 
 from timeit import default_timer as timer
-
 import logging
 
 

@@ -32,7 +32,7 @@ class SimulateScenario(object):
         #     lookat
         self.sensor = _SimulateSensor()
         class _struct_sensor_path:
-            position = [];
+            position = []
             lookat = []
         self.sensor.path = _struct_sensor_path()
 
@@ -89,7 +89,7 @@ class SimulateScenario(object):
             # mapper the reader data into polygon data
             mapper = vtk.vtkPolyDataMapper()
             mapper.SetInputConnection( reader.GetOutputPort() )
-            # asign the data to an actor that we can control
+            # assign the data to an actor that we can control
             actor = vtk.vtkActor()
             actor.SetMapper( mapper )
             # Add the actors to the renderer, set the background and size
