@@ -1,4 +1,3 @@
-# from SimulateScenario import SimulateScenario
 
 from DepthImageFilter import DepthImageFilter
 
