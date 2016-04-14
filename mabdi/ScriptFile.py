@@ -34,7 +34,7 @@ scene.iren.Render()
 
 # dif (depth image filter)
 # Filter that gets the depth image
-dif = mabdi.DepthImageFilter()
+dif = mabdi.FilterDepthImage()
 dif.SetRendererAndRenderWindow(scene.ren, scene.renWin)
 dif.Update()
 

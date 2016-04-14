@@ -10,7 +10,7 @@ from timeit import default_timer as timer
 import logging
 
 
-class DepthImageFilter(VTKPythonAlgorithmBase):
+class FilterDepthImage(VTKPythonAlgorithmBase):
     def __init__(self):
         VTKPythonAlgorithmBase.__init__(self,
                                         nInputPorts=0,

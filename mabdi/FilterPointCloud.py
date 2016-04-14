@@ -6,7 +6,7 @@ from vtk.numpy_interface import algorithms as alg
 import numpy as np
 
 
-class PointCloudFilter(VTKPythonAlgorithmBase):
+class FilterPointCloud(VTKPythonAlgorithmBase):
     def __init__(self):
         VTKPythonAlgorithmBase.__init__(self,
                                         nInputPorts=1, inputType='vtkImageData',
