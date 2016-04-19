@@ -9,6 +9,12 @@ from timeit import default_timer as timer
 
 
 class SourceEnvironmentTable(VTKPythonAlgorithmBase):
+    """Custom vtk filter for creating and controlling an environment called table
+
+    An environment consists of objects. The table environment consists of a
+    floor, table, and 2 cups.
+    """
+
     def __init__(self):
         VTKPythonAlgorithmBase.__init__(self,
                                         nInputPorts=0,
@@ -102,7 +108,10 @@ class SourceEnvironmentTable(VTKPythonAlgorithmBase):
         return 1
 
     def set_object_state(self, object_name='default', state='default'):
-
+        """Add or remove objects from the environment.
+        :param object_name: Name of object to change the state of.
+        :param state: Have the object in the environment?
+        """
         if state == 'default' or object_name == 'default':
             return 1
 
