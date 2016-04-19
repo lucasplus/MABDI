@@ -26,5 +26,13 @@ iren.SetRenderWindow(renWin)
 
 ren.AddActor(actor)
 
+
+def user_event_callback(obj, env):
+    logging.debug('')
+    source.set_object_state(object_name='table', state=False)
+    source.Modified()
+    ren.Render()
+iren.AddObserver('UserEvent', user_event_callback)
+
 iren.Initialize()
 iren.Start()
