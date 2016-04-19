@@ -29,9 +29,23 @@ ren.AddActor(actor)
 
 def user_event_callback(obj, env):
     logging.debug('')
-    source.set_object_state(object_name='table', state=False)
+
+    # toggle state
+    if not hasattr(user_event_callback, "state"):
+        user_event_callback.state = True  # it doesn't exist yet, so initialize it
+    user_event_callback.state = not user_event_callback.state
+
+    source.set_object_state(object_name='floor',
+                            state=not user_event_callback.state)
+    source.set_object_state(object_name='table',
+                            state=user_event_callback.state)
+    source.set_object_state(object_name='left_cup',
+                            state=not user_event_callback.state)
+    source.set_object_state(object_name='right_cup',
+                            state=user_event_callback.state)
+
     source.Modified()
-    ren.Render()
+    iren.Render()
 iren.AddObserver('UserEvent', user_event_callback)
 
 iren.Initialize()

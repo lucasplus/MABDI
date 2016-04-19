@@ -90,7 +90,6 @@ class SourceEnvironmentTable(VTKPythonAlgorithmBase):
             append.AddInputConnection(self._right_cup.GetOutputPort())
 
         append.Update()
-        print append.GetOutput().GetNumberOfPolys()
 
         # output
         info = outInfo.GetInformationObject(0)
@@ -112,9 +111,9 @@ class SourceEnvironmentTable(VTKPythonAlgorithmBase):
         elif object_name == 'table':
             self._table_flag = state
         elif object_name == 'left_cup':
-            self._table_flag = state
+            self._left_cup_flag = state
         elif object_name == 'right_cup':
-            self._table_flag = state
+            self._right_cup_flag = state
         else:
             return 1
 
