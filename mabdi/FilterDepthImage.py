@@ -15,10 +15,12 @@ class FilterDepthImage(VTKPythonAlgorithmBase):
         VTKPythonAlgorithmBase.__init__(self,
                                         nInputPorts=0,
                                         nOutputPorts=1, outputType='vtkImageData')
+        # vtk render objects
         self._ren = vtk.vtkRenderer()
         self._renWin = vtk.vtkRenderWindow()
         self._iren = vtk.vtkRenderWindowInteractor()
 
+        # wire them up
         self._renWin.AddRenderer(self._ren)
         self._iren.SetRenderWindow(self._renWin)
 
@@ -31,22 +33,19 @@ class FilterDepthImage(VTKPythonAlgorithmBase):
         self._ren.GetActiveCamera().SetPosition(0.0, 0.5, 2.0)
         self._ren.GetActiveCamera().SetFocalPoint(0.0, 0.5, 0.0)
 
+        # calculate image bounds
         self._imageBounds = [0, 0, 0, 0]
-
-        self._initialize()
-
-    def _initialize(self):
-        logging.debug('')
         viewport = self._ren.GetViewport()
         size = self._renWin.GetSize()
         self._imageBounds[0] = int(viewport[0] * size[0])
         self._imageBounds[1] = int(viewport[1] * size[1])
         self._imageBounds[2] = int(viewport[2] * size[0] + 0.5) - 1
         self._imageBounds[3] = int(viewport[3] * size[1] + 0.5) - 1
-        logging.debug('Window Size {}, {}'.format(*size))
 
     def set_polydata(self, in_polydata):
+        """Set vtkPolyData that defines the environment."""
         logging.debug('')
+
         mapper = vtk.vtkPolyDataMapper()
         mapper.SetInputConnection(in_polydata.GetOutputPort())
 
@@ -59,8 +58,13 @@ class FilterDepthImage(VTKPythonAlgorithmBase):
         self._iren.Render()
 
     def set_sensor_orientation(self, in_position, in_lookat):
+        """
+        :param in_position: Position of sensor in world coordinates.
+        :param in_lookat: Where the sensor is looking in world coordinates.
+        """
         logging.debug('')
         logging.debug('position{} lookat{}'.format(in_position, in_lookat))
+
         self._ren.GetActiveCamera().SetPosition(in_position)
         self._ren.GetActiveCamera().SetFocalPoint(in_lookat)
         self._iren.Render()
@@ -94,11 +98,3 @@ class FilterDepthImage(VTKPythonAlgorithmBase):
 
         return 1
 
-
-"""
-    def GetRenderer(self):
-        return self._ren
-
-    def GetRenderWindow(self):
-        return self._renWin
-"""
