@@ -22,7 +22,7 @@ source = mabdi.SourceEnvironmentTable()
 source.Update()
 
 dif = mabdi.FilterDepthImage()
-dif.SetPolyData(source)
+dif.set_polydata(source)
 
 # show output of the filter
 
@@ -53,7 +53,7 @@ lookat = np.vstack((rang/40,
                     np.zeros(len(rang)))).T
 
 for i, (pos, lka) in enumerate(zip(position, lookat)):
-    dif.SetSensorPosition(pos, lka)
+    dif.set_sensor_orientation(pos, lka)
     dif.Modified()
     iren.Render()
     time.sleep(.1)

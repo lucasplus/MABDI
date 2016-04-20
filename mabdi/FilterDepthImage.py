@@ -45,10 +45,10 @@ class FilterDepthImage(VTKPythonAlgorithmBase):
         self._imageBounds[3] = int(viewport[3] * size[1] + 0.5) - 1
         logging.debug('Window Size {}, {}'.format(*size))
 
-    def SetPolyData(self, inPolyData):
+    def set_polydata(self, in_polydata):
         logging.debug('')
         mapper = vtk.vtkPolyDataMapper()
-        mapper.SetInputConnection(inPolyData.GetOutputPort())
+        mapper.SetInputConnection(in_polydata.GetOutputPort())
 
         actor = vtk.vtkActor()
         actor.SetMapper(mapper)
@@ -58,11 +58,11 @@ class FilterDepthImage(VTKPythonAlgorithmBase):
         self._iren.Initialize()
         self._iren.Render()
 
-    def SetSensorPosition(self, inPosition, inLookat):
+    def set_sensor_orientation(self, in_position, in_lookat):
         logging.debug('')
-        logging.debug('position{} lookat{}'.format(inPosition, inLookat))
-        self._ren.GetActiveCamera().SetPosition(inPosition)
-        self._ren.GetActiveCamera().SetFocalPoint(inLookat)
+        logging.debug('position{} lookat{}'.format(in_position, in_lookat))
+        self._ren.GetActiveCamera().SetPosition(in_position)
+        self._ren.GetActiveCamera().SetFocalPoint(in_lookat)
         self._iren.Render()
 
     def RequestInformation(self, request, inInfo, outInfo):
