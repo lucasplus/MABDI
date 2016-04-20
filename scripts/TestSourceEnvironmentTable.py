@@ -6,6 +6,12 @@ import logging
 logging.basicConfig(level=logging.DEBUG,
                     format="%(levelname)s %(module)s @ %(funcName)s: %(message)s")
 
+"""
+Script to test SourceEnvironmentTable
+    SourceEnvironmentTable creates vtkPolyData based on an environment
+    with a floor, table, and two cups. Also, methods to add and
+    remove these objects.
+"""
 
 source = mabdi.SourceEnvironmentTable()
 source.Update()

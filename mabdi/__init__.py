@@ -1,6 +1,5 @@
 
 from SourceEnvironmentTable import SourceEnvironmentTable
-
 from FilterDepthImage import FilterDepthImage
 
 from MabdiUtilities import VTKRenderObjects

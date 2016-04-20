@@ -40,6 +40,7 @@ dif.Update()
 
 # show output of the filter
 image = mabdi.VTKRenderObjects()
+image.renWin.SetSize(640, 480)
 image.renWin.AddRenderer(image.ren)
 imageMapper = vtk.vtkImageMapper()
 imageMapper.SetInputConnection(dif.GetOutputPort())
