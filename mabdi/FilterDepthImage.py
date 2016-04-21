@@ -3,6 +3,7 @@ from vtk.util.vtkAlgorithm import VTKPythonAlgorithmBase
 from vtk.util import numpy_support
 from vtk.numpy_interface import dataset_adapter as dsa
 from vtk.numpy_interface import algorithms as alg
+from vtk.util import keys
 
 import numpy as np
 
@@ -82,16 +83,24 @@ class FilterDepthImage(VTKPythonAlgorithmBase):
         logging.debug('')
         start = timer()
 
+        # get current extent
         info = outInfo.GetInformationObject(0)
         ue = info.Get(vtk.vtkStreamingDemandDrivenPipeline.UPDATE_EXTENT())
 
+        # get the depth values
         vfa = vtk.vtkFloatArray()
         ib = self._imageBounds
         self._renWin.GetZbufferData(ib[0], ib[1], ib[2], ib[3], vfa)
 
+        # pack the depth values into the output vtkImageData
         out = vtk.vtkImageData.GetData(outInfo)
         out.GetPointData().SetScalars(vfa)
         out.SetExtent(ue)
+
+        # append meta data to the vtkImageData containing intrinsic parameters
+        key = keys.MakeKey(keys.DoubleVectorKey, 'test', 'my_location')
+        info = out.GetInformation()
+        info.Set(key, (1.0, 2.0), 2)
 
         end = timer()
         logging.debug('Execution time {:.4f} seconds'.format(end - start))
