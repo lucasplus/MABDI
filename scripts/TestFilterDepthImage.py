@@ -1,4 +1,8 @@
 import vtk
+from vtk.util import numpy_support
+from vtk.numpy_interface import dataset_adapter as dsa
+from vtk.numpy_interface import algorithms as alg
+
 import mabdi
 
 import numpy as np
@@ -51,6 +55,9 @@ position = np.vstack((rang/20,
 lookat = np.vstack((rang/40,
                     np.ones(len(rang))*.5,
                     np.zeros(len(rang)))).T
+
+image = dif.GetOutputDataObject(0)
+print image.GetInformation()
 
 for i, (pos, lka) in enumerate(zip(position, lookat)):
     dif.set_sensor_orientation(pos, lka)
