@@ -70,6 +70,12 @@ colors.GetColorRGB("red", rgb)
 actor.GetProperty().SetColor(rgb)
 ren2.AddActor(actor)
 
+emapper = vtk.vtkPolyDataMapper()
+emapper.SetInputConnection(source.GetOutputPort())
+eactor = vtk.vtkActor()
+eactor.SetMapper(emapper)
+ren2.AddActor(eactor)
+
 iren2.Initialize()
 iren2.Render()
 
