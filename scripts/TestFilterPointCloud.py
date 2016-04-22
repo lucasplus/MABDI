@@ -73,6 +73,8 @@ ren2.AddActor(actor)
 iren2.Initialize()
 iren2.Render()
 
+""" Move the sensor """
+
 rang = np.arange(-40, 41, dtype=float)
 position = np.vstack((rang/20,
                       np.ones(len(rang)),
@@ -80,8 +82,6 @@ position = np.vstack((rang/20,
 lookat = np.vstack((rang/40,
                     np.ones(len(rang))*.5,
                     np.zeros(len(rang)))).T
-
-
 
 for i, (pos, lka) in enumerate(zip(position, lookat)):
     fdi.set_sensor_orientation(pos, lka)

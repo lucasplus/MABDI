@@ -44,7 +44,10 @@ class FilterDepthImage(VTKPythonAlgorithmBase):
         self._imageBounds[3] = int(viewport[3] * size[1] + 0.5) - 1
 
     def set_polydata(self, in_polydata):
-        """Set vtkPolyData that defines the environment."""
+        """
+        User must specify the environment that this filter will use
+        :param in_polydata: vtkPolyData that defines the environment
+        """
         logging.debug('')
 
         mapper = vtk.vtkPolyDataMapper()
@@ -98,27 +101,26 @@ class FilterDepthImage(VTKPythonAlgorithmBase):
         out.SetExtent(ue)
 
         # append meta data to the vtkImageData containing intrinsic parameters
-        out.viewport = self._ren.GetViewport()
         out.sizex = self._renWin.GetSize()[0]
         out.sizey = self._renWin.GetSize()[1]
-
+        out.viewport = self._ren.GetViewport()
         vtktmat = self._ren.GetActiveCamera().GetCompositeProjectionTransformMatrix(
             self._ren.GetTiledAspectRatio(),
             0.0, 1.0)
         vtktmat.Invert()
-        out.tmat = self.__vtkmatrix_to_numpy(vtktmat)
+        out.tmat = self._vtkmatrix_to_numpy(vtktmat)
 
         end = timer()
         logging.debug('Execution time {:.4f} seconds'.format(end - start))
 
         return 1
 
-    def __vtkmatrix_to_numpy(self, matrix):
+    def _vtkmatrix_to_numpy(self, matrix):
         """
         Copies the elements of a vtkMatrix4x4 into a numpy array.
 
-        :type matrix: vtk.vtkMatrix4x4
         :param matrix: The matrix to be copied into an array.
+        :type matrix: vtk.vtkMatrix4x4
         :rtype: numpy.ndarray
         """
         m = np.ones((4, 4))
