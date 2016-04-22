@@ -81,14 +81,14 @@ lookat = np.vstack((rang/40,
                     np.ones(len(rang))*.5,
                     np.zeros(len(rang)))).T
 
-image = fdi.GetOutputDataObject(0)
-print image.GetInformation()
+
 
 for i, (pos, lka) in enumerate(zip(position, lookat)):
     fdi.set_sensor_orientation(pos, lka)
     fdi.Modified()
     iren1.Render()
     iren2.Render()
+    iren2.Start()
     time.sleep(.1)
 
 
