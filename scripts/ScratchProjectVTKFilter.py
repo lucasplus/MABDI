@@ -79,7 +79,9 @@ class ProjectDepthImage(VTKPythonAlgorithmBase):
         print 'Executing'
 
         # all the depth values
-        inp = dsa.WrapDataObject(vtk.vtkImageData.GetData(inInfo[0]))
+        imagedata = vtk.vtkImageData.GetData(inInfo[0])
+        inp = dsa.WrapDataObject(imagedata)
+        print inp.PointData.keys()
         depth = numpy_support.vtk_to_numpy(inp.PointData['ImageScalars'])
 
         # update the viewport points, check to see if render window size has changed

@@ -98,12 +98,31 @@ class FilterDepthImage(VTKPythonAlgorithmBase):
         out.SetExtent(ue)
 
         # append meta data to the vtkImageData containing intrinsic parameters
-        key = keys.MakeKey(keys.DoubleVectorKey, 'test', 'my_location')
-        info = out.GetInformation()
-        info.Set(key, (1.0, 2.0), 2)
+        out.viewport = self._ren.GetViewport()
+        out.sizex = self._renWin.GetSize()[0]
+        out.sizey = self._renWin.GetSize()[1]
+
+        vtktmat = self._ren.GetActiveCamera().GetCompositeProjectionTransformMatrix(
+            self._ren.GetTiledAspectRatio(),
+            0.0, 1.0)
+        vtktmat.Invert()
+        out.tmat = self.__vtkmatrix_to_numpy(vtktmat)
 
         end = timer()
         logging.debug('Execution time {:.4f} seconds'.format(end - start))
 
         return 1
 
+    def __vtkmatrix_to_numpy(self, matrix):
+        """
+        Copies the elements of a vtkMatrix4x4 into a numpy array.
+
+        :type matrix: vtk.vtkMatrix4x4
+        :param matrix: The matrix to be copied into an array.
+        :rtype: numpy.ndarray
+        """
+        m = np.ones((4, 4))
+        for i in range(4):
+            for j in range(4):
+                m[i, j] = matrix.GetElement(i, j)
+        return m

@@ -15,12 +15,10 @@ logging.basicConfig(level=logging.DEBUG,
                     format="%(levelname)s %(module)s @ %(funcName)s: %(message)s")
 
 """
-Script to test FilterDepthImage
-    FilterDepthImage takes vtkPolyData from SourceEnvironmentTable
-    and creates a vtkImage. As well, FilterDepthImage gives us control
-    of the sensor location in the environment. This script shows the
-    vtkImage and also moves the sensor along a straight line.
+Script to test FilterPointCloud
 """
+
+""" Filters and sources """
 
 source = mabdi.SourceEnvironmentTable()
 source.Update()
@@ -28,25 +26,52 @@ source.Update()
 fdi = mabdi.FilterDepthImage()
 fdi.set_polydata(source)
 
-# show output of the filter
+fpc = mabdi.FilterPointCloud()
+fpc.SetInputConnection(fdi.GetOutputPort())
 
-ren = vtk.vtkRenderer()
-renWin = vtk.vtkRenderWindow()
-iren = vtk.vtkRenderWindowInteractor()
-renWin.AddRenderer(ren)
-iren.SetRenderWindow(renWin)
+""" Render objects """
 
-renWin.SetSize(640, 480)
+ren1 = vtk.vtkRenderer()
+renWin1 = vtk.vtkRenderWindow()
+iren1 = vtk.vtkRenderWindowInteractor()
+renWin1.AddRenderer(ren1)
+iren1.SetRenderWindow(renWin1)
+
+ren2 = vtk.vtkRenderer()
+renWin2 = vtk.vtkRenderWindow()
+iren2 = vtk.vtkRenderWindowInteractor()
+renWin2.AddRenderer(ren2)
+iren2.SetRenderWindow(renWin2)
+
+""" Set up render objects """
+
+# for displaying depth image
+renWin1.SetSize(640, 480)
 imageMapper = vtk.vtkImageMapper()
 imageMapper.SetInputConnection(fdi.GetOutputPort())
 imageMapper.SetColorWindow(1.0)
 imageMapper.SetColorLevel(0.5)
 imageActor = vtk.vtkActor2D()
 imageActor.SetMapper(imageMapper)
-ren.AddActor(imageActor)
+ren1.AddActor(imageActor)
 
-iren.Initialize()
-iren.Render()
+iren1.Initialize()
+iren1.Render()
+
+# for displaying the point cloud
+mapper = vtk.vtkPolyDataMapper()
+mapper.SetInputConnection(fpc.GetOutputPort())
+actor = vtk.vtkActor()
+actor.SetMapper(mapper)
+actor.GetProperty().SetPointSize(2)
+rgb = [0.0, 0.0, 0.0]
+colors = vtk.vtkNamedColors()
+colors.GetColorRGB("red", rgb)
+actor.GetProperty().SetColor(rgb)
+ren2.AddActor(actor)
+
+iren2.Initialize()
+iren2.Render()
 
 rang = np.arange(-40, 41, dtype=float)
 position = np.vstack((rang/20,
@@ -62,9 +87,8 @@ print image.GetInformation()
 for i, (pos, lka) in enumerate(zip(position, lookat)):
     fdi.set_sensor_orientation(pos, lka)
     fdi.Modified()
-    iren.Render()
+    iren1.Render()
+    iren2.Render()
     time.sleep(.1)
-
-
 
 
