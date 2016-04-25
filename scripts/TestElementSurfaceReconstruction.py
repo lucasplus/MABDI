@@ -8,7 +8,6 @@ import mabdi
 import numpy as np
 
 import time
-
 import logging
 
 logging.basicConfig(level=logging.DEBUG,
@@ -38,7 +37,7 @@ diro.renWin.SetSize(640, 480)
 # scenario render objects
 sro = mabdi.VTKRenderObjects()
 
-""" Set up render objects """
+""" Set up actors """
 
 # depth image actor objects
 diao = mabdi.VTKImageActorObjects()
@@ -66,6 +65,33 @@ sao.actor.SetMapper(sao.mapper)
 diro.ren.AddActor(diao.actor)
 sro.ren.AddActor(pcao.actor)
 sro.ren.AddActor(sao.actor)
+
+""" Surface reconstruction """
+
+surf = vtk.vtkSurfaceReconstructionFilter()
+surf.SetInputConnection(fpc.GetOutputPort())
+
+cf = vtk.vtkContourFilter()
+cf.SetInputConnection(surf.GetOutputPort())
+cf.SetValue(0, 0.0)
+
+reverse = vtk.vtkReverseSense()
+reverse.SetInputConnection(cf.GetOutputPort())
+reverse.ReverseCellsOn()
+reverse.ReverseNormalsOn()
+
+mapper = vtk.vtkPolyDataMapper()
+mapper.SetInputConnection(reverse.GetOutputPort())
+mapper.ScalarVisibilityOff()
+
+surfaceActor = vtk.vtkActor()
+surfaceActor.SetMapper(mapper)
+surfaceActor.GetProperty().SetDiffuseColor(1.0000, 0.3882, 0.2784)
+surfaceActor.GetProperty().SetSpecularColor(1, 1, 1)
+surfaceActor.GetProperty().SetSpecular(.4)
+surfaceActor.GetProperty().SetSpecularPower(50)
+
+sro.ren.AddActor(surfaceActor)
 
 """ Initialize and do first render """
 
