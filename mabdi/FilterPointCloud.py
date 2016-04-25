@@ -33,7 +33,7 @@ class FilterPointCloud(VTKPythonAlgorithmBase):
         inp = vtk.vtkImageData.GetData(inInfo[0])
 
         if (self._sizex, self._sizey, self._viewport) != (inp.sizex, inp.sizey, inp.viewport):
-            print "hi"
+            logging.debug('Initializing arrays for projection calculation.')
             # save the new size and viewport
             (self._sizex, self._sizey) = (inp.sizex, inp.sizey)
             self._viewport = inp.viewport
