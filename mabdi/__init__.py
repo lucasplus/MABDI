@@ -4,3 +4,5 @@ from FilterDepthImage import FilterDepthImage
 from FilterPointCloud import FilterPointCloud
 
 from MabdiUtilities import VTKRenderObjects
+from MabdiUtilities import VTKImageActorObjects
+from MabdiUtilities import VTKPolyDataActorObjects
