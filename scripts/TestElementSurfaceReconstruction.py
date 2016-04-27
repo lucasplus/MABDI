@@ -54,11 +54,8 @@ pcao = mabdi.VTKPolyDataActorObjects()
 pcao.mapper.SetInputConnection(fpc.GetOutputPort())
 
 # point cloud, adjust color
-pcao.actor.GetProperty().SetPointSize(2)
-rgb = [0.0, 0.0, 0.0]
-colors = vtk.vtkNamedColors()
-colors.GetColorRGB("red", rgb)
-pcao.actor.GetProperty().SetColor(rgb)
+pcao.actor.GetProperty().SetPointSize(1.5)
+pcao.actor.GetProperty().SetColor(red)
 
 # source environment actor objects
 sao = mabdi.VTKPolyDataActorObjects()
@@ -72,18 +69,45 @@ sro.ren.AddActor(sao.actor)
 
 """ Surface reconstruction """
 
+# first reduce the number of points by random sampling
 ptMask = vtk.vtkMaskPoints()
 ptMask.SetInputConnection(fpc.GetOutputPort())
-ptMask.SetOnRatio(20)
+ptMask.SetOnRatio(50)
 ptMask.RandomModeOn()
-ptMask.SetRandomModeType(1)
+ptMask.SetRandomModeType(0)
+
+#
+delny = vtk.vtkDelaunay2D()
+mabdi.DebugTimeVTKFilter(delny)
+delny.SetInputConnection(ptMask.GetOutputPort())
+delny.SetAlpha(0.05)
+delny.SetTolerance(0.001)
+
+# We will now create a nice looking mesh by wrapping the edges in tubes,
+# and putting fat spheres at the points.
+extract = vtk.vtkExtractEdges()
+extract.SetInputConnection(delny.GetOutputPort())
+tubes = vtk.vtkTubeFilter()
+tubes.SetInputConnection(extract.GetOutputPort())
+tubes.SetRadius(0.01)
+tubes.SetNumberOfSides(6)
+mapEdges = vtk.vtkPolyDataMapper()
+mapEdges.SetInputConnection(tubes.GetOutputPort())
+edgeActor = vtk.vtkActor()
+edgeActor.SetMapper(mapEdges)
+edgeActor.GetProperty().SetColor(peacock)
+edgeActor.GetProperty().SetSpecularColor(1, 1, 1)
+edgeActor.GetProperty().SetSpecular(0.3)
+edgeActor.GetProperty().SetSpecularPower(20)
+edgeActor.GetProperty().SetAmbient(0.2)
+edgeActor.GetProperty().SetDiffuse(0.8)
 
 ball = vtk.vtkSphereSource()
-ball.SetRadius(0.025)
+ball.SetRadius(0.02)
 ball.SetThetaResolution(12)
 ball.SetPhiResolution(12)
 balls = vtk.vtkGlyph3D()
-balls.SetInputConnection(ptMask.GetOutputPort())
+balls.SetInputConnection(delny.GetOutputPort())
 balls.SetSourceConnection(ball.GetOutputPort())
 mapBalls = vtk.vtkPolyDataMapper()
 mapBalls.SetInputConnection(balls.GetOutputPort())
@@ -97,6 +121,7 @@ ballActor.GetProperty().SetAmbient(0.2)
 ballActor.GetProperty().SetDiffuse(0.8)
 
 sro.ren.AddActor(ballActor)
+sro.ren.AddActor(edgeActor)
 
 """ Initialize and do first render """
 
