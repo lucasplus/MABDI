@@ -1,4 +1,5 @@
 import vtk
+from vtk.util.colors import *
 from vtk.util import numpy_support
 from vtk.numpy_interface import dataset_adapter as dsa
 from vtk.numpy_interface import algorithms as alg
@@ -20,6 +21,9 @@ Script to test FilterPointCloud
 """ Filters and sources """
 
 source = mabdi.SourceEnvironmentTable()
+source.set_object_state(object_name='table', state=False)
+source.set_object_state(object_name='left_cup', state=False)
+source.set_object_state(object_name='right_cup', state=False)
 source.Update()
 
 fdi = mabdi.FilterDepthImage()
@@ -68,30 +72,30 @@ sro.ren.AddActor(sao.actor)
 
 """ Surface reconstruction """
 
-surf = vtk.vtkSurfaceReconstructionFilter()
-surf.SetInputConnection(fpc.GetOutputPort())
+ptMask = vtk.vtkMaskPoints()
+ptMask.SetInputConnection(fpc.GetOutputPort())
+ptMask.SetOnRatio(20)
+ptMask.RandomModeOff()
 
-cf = vtk.vtkContourFilter()
-cf.SetInputConnection(surf.GetOutputPort())
-cf.SetValue(0, 0.0)
+ball = vtk.vtkSphereSource()
+ball.SetRadius(0.025)
+ball.SetThetaResolution(12)
+ball.SetPhiResolution(12)
+balls = vtk.vtkGlyph3D()
+balls.SetInputConnection(ptMask.GetOutputPort())
+balls.SetSourceConnection(ball.GetOutputPort())
+mapBalls = vtk.vtkPolyDataMapper()
+mapBalls.SetInputConnection(balls.GetOutputPort())
+ballActor = vtk.vtkActor()
+ballActor.SetMapper(mapBalls)
+ballActor.GetProperty().SetColor(hot_pink)
+ballActor.GetProperty().SetSpecularColor(1, 1, 1)
+ballActor.GetProperty().SetSpecular(0.3)
+ballActor.GetProperty().SetSpecularPower(20)
+ballActor.GetProperty().SetAmbient(0.2)
+ballActor.GetProperty().SetDiffuse(0.8)
 
-reverse = vtk.vtkReverseSense()
-reverse.SetInputConnection(cf.GetOutputPort())
-reverse.ReverseCellsOn()
-reverse.ReverseNormalsOn()
-
-mapper = vtk.vtkPolyDataMapper()
-mapper.SetInputConnection(reverse.GetOutputPort())
-mapper.ScalarVisibilityOff()
-
-surfaceActor = vtk.vtkActor()
-surfaceActor.SetMapper(mapper)
-surfaceActor.GetProperty().SetDiffuseColor(1.0000, 0.3882, 0.2784)
-surfaceActor.GetProperty().SetSpecularColor(1, 1, 1)
-surfaceActor.GetProperty().SetSpecular(.4)
-surfaceActor.GetProperty().SetSpecularPower(50)
-
-sro.ren.AddActor(surfaceActor)
+sro.ren.AddActor(ballActor)
 
 """ Initialize and do first render """
 
@@ -118,3 +122,31 @@ for i, (pos, lka) in enumerate(zip(position, lookat)):
     sro.iren.Render()
     sro.iren.Start()
     time.sleep(.1)
+
+
+"""
+surf = vtk.vtkSurfaceReconstructionFilter()
+surf.SetInputConnection(fpc.GetOutputPort())
+
+cf = vtk.vtkContourFilter()
+cf.SetInputConnection(surf.GetOutputPort())
+cf.SetValue(0, 0.0)
+
+reverse = vtk.vtkReverseSense()
+reverse.SetInputConnection(cf.GetOutputPort())
+reverse.ReverseCellsOn()
+reverse.ReverseNormalsOn()
+
+mapper = vtk.vtkPolyDataMapper()
+mapper.SetInputConnection(reverse.GetOutputPort())
+mapper.ScalarVisibilityOff()
+
+surfaceActor = vtk.vtkActor()
+surfaceActor.SetMapper(mapper)
+surfaceActor.GetProperty().SetDiffuseColor(1.0000, 0.3882, 0.2784)
+surfaceActor.GetProperty().SetSpecularColor(1, 1, 1)
+surfaceActor.GetProperty().SetSpecular(.4)
+surfaceActor.GetProperty().SetSpecularPower(50)
+
+sro.ren.AddActor(surfaceActor)
+"""
