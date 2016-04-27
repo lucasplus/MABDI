@@ -75,7 +75,7 @@ sro.ren.AddActor(sao.actor)
 ptMask = vtk.vtkMaskPoints()
 ptMask.SetInputConnection(fpc.GetOutputPort())
 ptMask.SetOnRatio(20)
-ptMask.RandomModeOff()
+ptMask.RandomModeOn()
 
 ball = vtk.vtkSphereSource()
 ball.SetRadius(0.025)
@@ -104,6 +104,10 @@ diro.iren.Render()
 
 sro.iren.Initialize()
 sro.iren.Render()
+
+""" Filter callback """
+
+mabdi.DebugTimeVTKFilter(ptMask)
 
 """ Move the sensor """
 

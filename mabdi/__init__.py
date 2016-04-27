@@ -6,3 +6,4 @@ from FilterPointCloud import FilterPointCloud
 from MabdiUtilities import VTKRenderObjects
 from MabdiUtilities import VTKImageActorObjects
 from MabdiUtilities import VTKPolyDataActorObjects
+from MabdiUtilities import DebugTimeVTKFilter
