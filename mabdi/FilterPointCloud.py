@@ -4,6 +4,8 @@ from vtk.util import numpy_support
 from vtk.numpy_interface import dataset_adapter as dsa
 from vtk.numpy_interface import algorithms as alg
 
+from MabdiUtilities import DebugTimeVTKFilter
+
 import numpy as np
 
 from timeit import default_timer as timer
@@ -23,7 +25,13 @@ class FilterPointCloud(VTKPythonAlgorithmBase):
         self._display_pts = []
         self._viewport_pts = []
         self._world_pts = []
+
+        self._points = vtk.vtkPoints()
         self._polydata = vtk.vtkPolyData()
+        self._polydata.SetPoints(self._points)
+        self._vgf = vtk.vtkVertexGlyphFilter()
+        DebugTimeVTKFilter(self._vgf)
+        self._vgf.SetInputData(self._polydata)
 
     def RequestData(self, request, inInfo, outInfo):
         logging.debug('')
@@ -53,15 +61,6 @@ class FilterPointCloud(VTKPythonAlgorithmBase):
                 self._sizey * (self._viewport[3] - self._viewport[1])) - 1.0
             # new world points (of the right size)
             self._world_pts = np.ones(self._viewport_pts.shape)
-            # initialize vtkPolyData
-            points = vtk.vtkPoints()
-            vertices = vtk.vtkCellArray()
-            for i in np.arange(self._world_pts.shape[1]):
-                pt_id = points.InsertNextPoint(self._world_pts[0:3, i])
-                vertices.InsertNextCell(1)
-                vertices.InsertCellPoint(pt_id)
-            self._polydata.SetPoints(points)
-            self._polydata.SetVerts(vertices)
 
         # update the viewport points
         self._viewport_pts[2, :] = numpy_support.vtk_to_numpy(inp.GetPointData().GetScalars())
@@ -71,12 +70,14 @@ class FilterPointCloud(VTKPythonAlgorithmBase):
         self._world_pts = self._world_pts / self._world_pts[3]
 
         # update polydata
-        points = vtk.vtkPoints()
-        vtkarray = dsa.numpyTovtkDataArray(self._world_pts[0:3, :].T)
-        points.SetData(vtkarray)
-        self._polydata.SetPoints(points)
+        valid_pts_index = self._viewport_pts[2, :] < 1.0
+        vtkarray = dsa.numpyTovtkDataArray(self._world_pts[0:3, valid_pts_index].T)
+        self._points.SetData(vtkarray)
+        self._polydata.SetPoints(self._points)
+        self._vgf.Update()
+
         out = vtk.vtkPolyData.GetData(outInfo)
-        out.ShallowCopy(self._polydata)
+        out.ShallowCopy(self._vgf.GetOutput())
 
         end = timer()
         logging.debug('Execution time {:.4f} seconds'.format(end - start))

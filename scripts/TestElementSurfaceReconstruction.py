@@ -21,9 +21,9 @@ Script to test FilterPointCloud
 """ Filters and sources """
 
 source = mabdi.SourceEnvironmentTable()
-source.set_object_state(object_name='table', state=False)
-source.set_object_state(object_name='left_cup', state=False)
-source.set_object_state(object_name='right_cup', state=False)
+# source.set_object_state(object_name='table', state=False)
+# source.set_object_state(object_name='left_cup', state=False)
+# source.set_object_state(object_name='right_cup', state=False)
 source.Update()
 
 fdi = mabdi.FilterDepthImage()
@@ -76,6 +76,7 @@ ptMask = vtk.vtkMaskPoints()
 ptMask.SetInputConnection(fpc.GetOutputPort())
 ptMask.SetOnRatio(20)
 ptMask.RandomModeOn()
+ptMask.SetRandomModeType(1)
 
 ball = vtk.vtkSphereSource()
 ball.SetRadius(0.025)
