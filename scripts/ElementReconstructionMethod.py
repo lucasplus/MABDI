@@ -21,6 +21,8 @@ import logging
 logging.basicConfig(level=logging.DEBUG,
                     format="%(levelname)s %(module)s @ %(funcName)s: %(message)s")
 
+""" Point source (pointSource) """
+
 # Read some points. Use a programmable filter to read them.
 pointSource = vtk.vtkProgrammableSource()
 
@@ -38,16 +40,41 @@ def func_read_points():
         if data and data[0] == 'p':
             x, y, z = float(data[1]), float(data[2]), float(data[3])
             if random.random() < 0.4 and x > .5:
-                points.InsertNextPoint(x, y, z)
+                points.InsertNextPoint(y, z, x)
         line = datafile.readline()
 pointSource.SetExecuteMethod(func_read_points)
 
+# actor to show the points
+ball = vtk.vtkSphereSource()
+ball.SetRadius(0.005)
+ball.SetThetaResolution(12)
+ball.SetPhiResolution(12)
+balls = vtk.vtkGlyph3D()
+balls.SetInputConnection(pointSource.GetOutputPort())
+balls.SetSourceConnection(ball.GetOutputPort())
+mapBalls = vtk.vtkPolyDataMapper()
+mapBalls.SetInputConnection(balls.GetOutputPort())
+pointActor = vtk.vtkActor()
+pointActor.SetMapper(mapBalls)
+pointActor.GetProperty().SetColor(hot_pink)
+pointActor.GetProperty().SetSpecularColor(1, 1, 1)
+pointActor.GetProperty().SetSpecular(0.3)
+pointActor.GetProperty().SetSpecularPower(20)
+pointActor.GetProperty().SetAmbient(0.2)
+pointActor.GetProperty().SetDiffuse(0.8)
 
-# Construct the surface and create isosurface.
+""" vtkSurfaceReconstructionFilter """
+
+# parameters, set 0 to not set them
+surf_neighborhood_size = 20  # default is 20
+surf_sample_spacing = .01
+
 surf = vtk.vtkSurfaceReconstructionFilter()
-surf.SetNeighborhoodSize(20)
-surf.SetSampleSpacing(.01)
 mabdi.DebugTimeVTKFilter(surf)
+if surf_neighborhood_size != 0:
+    surf.SetNeighborhoodSize(surf_neighborhood_size)
+if surf_sample_spacing != 0:
+    surf.SetSampleSpacing(surf_sample_spacing)
 surf.SetInputConnection(pointSource.GetOutputPort())
 
 cf = vtk.vtkContourFilter()
@@ -64,58 +91,49 @@ reverse.SetInputConnection(cf.GetOutputPort())
 reverse.ReverseCellsOn()
 reverse.ReverseNormalsOn()
 
-mapper = vtk.vtkPolyDataMapper()
-mapper.SetInputConnection(reverse.GetOutputPort())
-mapper.ScalarVisibilityOff()
+surfao = mabdi.VTKPolyDataActorObjects()
+surfao.mapper.SetInputConnection(reverse.GetOutputPort())
 
-surfaceActor = vtk.vtkActor()
-surfaceActor.SetMapper(mapper)
-surfaceActor.GetProperty().SetDiffuseColor(1.0000, 0.3882, 0.2784)
-surfaceActor.GetProperty().SetSpecularColor(1, 1, 1)
-surfaceActor.GetProperty().SetSpecular(.4)
-surfaceActor.GetProperty().SetSpecularPower(50)
+surfao.mapper.ScalarVisibilityOff()
 
-ball = vtk.vtkSphereSource()
-ball.SetRadius(0.005)
-ball.SetThetaResolution(12)
-ball.SetPhiResolution(12)
-balls = vtk.vtkGlyph3D()
-balls.SetInputConnection(pointSource.GetOutputPort())
-balls.SetSourceConnection(ball.GetOutputPort())
-mapBalls = vtk.vtkPolyDataMapper()
-mapBalls.SetInputConnection(balls.GetOutputPort())
-ballActor = vtk.vtkActor()
-ballActor.SetMapper(mapBalls)
-ballActor.GetProperty().SetColor(hot_pink)
-ballActor.GetProperty().SetSpecularColor(1, 1, 1)
-ballActor.GetProperty().SetSpecular(0.3)
-ballActor.GetProperty().SetSpecularPower(20)
-ballActor.GetProperty().SetAmbient(0.2)
-ballActor.GetProperty().SetDiffuse(0.8)
+surfao.actor.GetProperty().SetDiffuseColor(1.0000, 0.3882, 0.2784)
+surfao.actor.GetProperty().SetSpecularColor(1, 1, 1)
+surfao.actor.GetProperty().SetSpecular(.4)
+surfao.actor.GetProperty().SetSpecularPower(50)
 
-# Create the RenderWindow, Renderer and both Actors
-ren = vtk.vtkRenderer()
+""" Render objects """
+
 renWin = vtk.vtkRenderWindow()
-renWin.AddRenderer(ren)
+renWin.SetSize(640*3, 480)
 iren = vtk.vtkRenderWindowInteractor()
 iren.SetRenderWindow(renWin)
 
-# Add the actors to the renderer, set the background and size
-ren.AddActor(surfaceActor)
-ren.AddActor(ballActor)
-ren.SetBackground(1, 1, 1)
-renWin.SetSize(400, 400)
-ren.GetActiveCamera().SetFocalPoint(0, 0, 0)
-ren.GetActiveCamera().SetPosition(1, 0, 0)
-ren.GetActiveCamera().SetViewUp(0, 0, 1)
-ren.ResetCamera()
-ren.GetActiveCamera().Azimuth(20)
-ren.GetActiveCamera().Elevation(30)
-ren.GetActiveCamera().Dolly(1.2)
-ren.ResetCameraClippingRange()
+renSurf = vtk.vtkRenderer()
+renSurf.SetBackground(1, 1, 1)
 
-print surf.GetSampleSpacing()
+renSurf.SetViewport(0.0, 0.0, 1.0/3, 1.0)
+
+renWin.AddRenderer(renSurf)
+
+# Add the actors to the renderer, set the background and size
+renSurf.AddActor(surfao.actor)
+renSurf.AddActor(pointActor)
+
+""" Control point visibility """
+
+
+def user_event_callback(obj, env):
+    if not hasattr(user_event_callback, 'point_visibility'):
+        user_event_callback.point_visibility = True
+    user_event_callback.point_visibility = not user_event_callback.point_visibility
+    if user_event_callback.point_visibility:
+        pointActor.SetVisibility(1)
+    else:
+        pointActor.SetVisibility(0)
+    iren.Render()
+iren.AddObserver('UserEvent', user_event_callback)
+
+""" Start Rendering """
 
 iren.Initialize()
-renWin.Render()
 iren.Start()
