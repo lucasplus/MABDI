@@ -5,6 +5,9 @@ In this script we are going to compare surface reconstruction methods
 - vtkDelaunay3D
 """
 
+# TODO make it work with the table environment
+# TODO show the table environment as opaque
+
 import os
 import string
 
@@ -101,6 +104,48 @@ surfao.actor.GetProperty().SetSpecularColor(1, 1, 1)
 surfao.actor.GetProperty().SetSpecular(.4)
 surfao.actor.GetProperty().SetSpecularPower(50)
 
+""" vtkDelaunay2D """
+
+delny2D = vtk.vtkDelaunay2D()
+mabdi.DebugTimeVTKFilter(delny2D)
+delny2D.SetInputConnection(pointSource.GetOutputPort())
+delny2D.SetAlpha(0.05)
+delny2D.SetTolerance(0.001)
+
+delny2Dao = mabdi.VTKPolyDataActorObjects()
+delny2Dao.mapper.SetInputConnection(delny2D.GetOutputPort())
+
+delny2Dao.mapper.ScalarVisibilityOff()
+
+delny2Dao.actor.GetProperty().SetDiffuseColor(1.0000, 0.3882, 0.2784)
+delny2Dao.actor.GetProperty().SetSpecularColor(1, 1, 1)
+delny2Dao.actor.GetProperty().SetSpecular(.4)
+delny2Dao.actor.GetProperty().SetSpecularPower(50)
+
+""" vtkDelaunay3D """
+
+# Delaunay3D is used to triangulate the points. The Tolerance is the
+# distance that nearly coincident points are merged
+# together. (Delaunay does better if points are well spaced.) The
+# alpha value is the radius of circumcircles, circumspheres. Any mesh
+# entity whose circumcircle is smaller than this value is output.
+delny3D = vtk.vtkDelaunay3D()
+mabdi.DebugTimeVTKFilter(delny3D)
+delny3D.SetInputConnection(pointSource.GetOutputPort())
+delny3D.SetTolerance(0.001)
+# delny3D.SetAlpha(0.05)
+delny3D.BoundingTriangulationOff()
+
+delny3Dao = mabdi.VTKPolyDataActorObjects()
+delny3Dao.mapper.SetInputConnection(delny3D.GetOutputPort())
+
+delny3Dao.mapper.ScalarVisibilityOff()
+
+delny3Dao.actor.GetProperty().SetDiffuseColor(1.0000, 0.3882, 0.2784)
+delny3Dao.actor.GetProperty().SetSpecularColor(1, 1, 1)
+delny3Dao.actor.GetProperty().SetSpecular(.4)
+delny3Dao.actor.GetProperty().SetSpecularPower(50)
+
 """ Render objects """
 
 renWin = vtk.vtkRenderWindow()
@@ -111,13 +156,26 @@ iren.SetRenderWindow(renWin)
 renSurf = vtk.vtkRenderer()
 renSurf.SetBackground(1, 1, 1)
 
+renDy2D = vtk.vtkRenderer()
+renDy2D.SetBackground(1, 1, 1)
+
+renDy3D = vtk.vtkRenderer()
+renDy3D.SetBackground(1, 1, 1)
+
 renSurf.SetViewport(0.0, 0.0, 1.0/3, 1.0)
+renDy2D.SetViewport(1.0/3, 0.0, 2.0/3, 1.0)
+renDy3D.SetViewport(2.0/3, 0.0, 3.0/3, 1.0)
 
 renWin.AddRenderer(renSurf)
+renWin.AddRenderer(renDy2D)
+renWin.AddRenderer(renDy3D)
 
-# Add the actors to the renderer, set the background and size
 renSurf.AddActor(surfao.actor)
 renSurf.AddActor(pointActor)
+renDy2D.AddActor(delny2Dao.actor)
+renDy2D.AddActor(pointActor)
+renDy3D.AddActor(delny3Dao.actor)
+renDy3D.AddActor(pointActor)
 
 """ Control point visibility """
 
@@ -134,6 +192,8 @@ def user_event_callback(obj, env):
 iren.AddObserver('UserEvent', user_event_callback)
 
 """ Start Rendering """
+
+print vtkGetDataRoot()
 
 iren.Initialize()
 iren.Start()
