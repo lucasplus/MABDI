@@ -15,74 +15,198 @@ logging.basicConfig(level=logging.DEBUG,
                     format="%(levelname)s %(module)s @ %(funcName)s: %(message)s")
 
 """
-Script to test FilterPointCloud
+Script to test the ability of vtk's surface reconstruction methods to work on our data
+Render Window top row
+- [Scenario View] renSc; Interactive
+- [POV of sensor] renSV; Not Interactive (unless offscreen rendering works)
+- [Sensor output] renSO; Not Interactive
+Render Window bottom row [surf] [delny2D] [delny3D] Interactive
+- Output of the algorithms
+- Translucent environment
+- Input points to the algorithm
 """
 
-""" Filters and sources """
+"""
+Source and filters (source->depthimage->pointcloud)
+[source] [sourceAo] - polydata describing environment
+[di] [diAo] - Depth image
+[pc] [pcAo] - Point cloud
+[spc] [spcActor] - Subsampled point cloud
+"""
 
+# source
 source = mabdi.SourceEnvironmentTable()
 # source.set_object_state(object_name='table', state=False)
 # source.set_object_state(object_name='left_cup', state=False)
 # source.set_object_state(object_name='right_cup', state=False)
 source.Update()
+sourceAo = mabdi.VTKPolyDataActorObjects()
+sourceAo.mapper.SetInputConnection(source.GetOutputPort())
+sourceAo.actor.SetMapper(sourceAo.mapper)
+sourceAo.actor.GetProperty().SetColor(slate_grey_light)
+sourceAo.actor.GetProperty().SetOpacity(0.8)
 
-fdi = mabdi.FilterDepthImage()
-fdi.set_polydata(source)
+# depth image
+di = mabdi.FilterDepthImage()
+di.set_polydata(source)
+diAo = mabdi.VTKImageActorObjects()
+diAo.mapper.SetInputConnection(di.GetOutputPort())
+diAo.mapper.SetColorWindow(1.0)
+diAo.mapper.SetColorLevel(0.5)
 
-fpc = mabdi.FilterPointCloud()
-fpc.SetInputConnection(fdi.GetOutputPort())
+# point cloud
+pc = mabdi.FilterPointCloud()
+pc.SetInputConnection(di.GetOutputPort())
+pcAo = mabdi.VTKPolyDataActorObjects()
+pcAo.mapper.SetInputConnection(pc.GetOutputPort())
+pcAo.actor.GetProperty().SetPointSize(1.5)
+pcAo.actor.GetProperty().SetColor(red)
+
+# subsampled point cloud
+spc = vtk.vtkMaskPoints()
+mabdi.DebugTimeVTKFilter(spc)
+spc.SetInputConnection(pc.GetOutputPort())
+spc.SetOnRatio(21)
+spc.RandomModeOff()
+spc.SetRandomModeType(0)
+
+# subsampled point cloud actor
+ball = vtk.vtkSphereSource()
+ball.SetRadius(0.01)
+ball.SetThetaResolution(12)
+ball.SetPhiResolution(12)
+balls = vtk.vtkGlyph3D()
+balls.SetInputConnection(spc.GetOutputPort())
+balls.SetSourceConnection(ball.GetOutputPort())
+mapBalls = vtk.vtkPolyDataMapper()
+mapBalls.SetInputConnection(balls.GetOutputPort())
+spcActor = vtk.vtkActor()
+spcActor.SetMapper(mapBalls)
+spcActor.GetProperty().SetColor(hot_pink)
+spcActor.GetProperty().SetSpecularColor(1, 1, 1)
+spcActor.GetProperty().SetSpecular(0.3)
+spcActor.GetProperty().SetSpecularPower(20)
+spcActor.GetProperty().SetAmbient(0.2)
+spcActor.GetProperty().SetDiffuse(0.8)
+
+""" vtkDelaunay2D """
+
+delny2D = vtk.vtkDelaunay2D()
+mabdi.DebugTimeVTKFilter(delny2D)
+delny2D.SetInputConnection(spc.GetOutputPort())
+delny2D.SetAlpha(0.05)
+delny2D.SetTolerance(0.001)
+
+delny2Dao = mabdi.VTKPolyDataActorObjects()
+delny2Dao.mapper.SetInputConnection(delny2D.GetOutputPort())
+
+delny2Dao.mapper.ScalarVisibilityOff()
+
+delny2Dao.actor.GetProperty().SetDiffuseColor(1.0000, 0.3882, 0.2784)
+delny2Dao.actor.GetProperty().SetSpecularColor(1, 1, 1)
+delny2Dao.actor.GetProperty().SetSpecular(.4)
+delny2Dao.actor.GetProperty().SetSpecularPower(50)
 
 """ Render objects """
 
-# depth image render objects
-diro = mabdi.VTKRenderObjects()
-diro.renWin.SetSize(640, 480)
+renWin = vtk.vtkRenderWindow()
+renWin.SetSize(640*3, 480*2)
+iren = vtk.vtkRenderWindowInteractor()
+iren.SetRenderWindow(renWin)
 
-# scenario render objects
-sro = mabdi.VTKRenderObjects()
+""" Render objects top row """
 
-""" Set up actors """
+renSc = vtk.vtkRenderer()
+renSc.SetBackground(eggshell)
+renSc.SetViewport(0.0, 0.5, 1.0/3, 1.0)
+renSc.AddActor(sourceAo.actor)
+renSc.AddActor(pcAo.actor)
+renSc.AddActor(spcActor)
 
-# depth image actor objects
-diao = mabdi.VTKImageActorObjects()
-diao.mapper.SetInputConnection(fdi.GetOutputPort())
-diao.mapper.SetColorWindow(1.0)
-diao.mapper.SetColorLevel(0.5)
+renSo = vtk.vtkRenderer()
+renSo.SetViewport(2.0/3, 0.5, 3.0/3, 1.0)
+renSo.SetInteractive(0)
+renSo.AddActor(diAo.actor)
 
-# point cloud actor objects
-pcao = mabdi.VTKPolyDataActorObjects()
-pcao.mapper.SetInputConnection(fpc.GetOutputPort())
+renWin.AddRenderer(renSc)
+renWin.AddRenderer(renSo)
 
-# point cloud, adjust color
-pcao.actor.GetProperty().SetPointSize(1.5)
-pcao.actor.GetProperty().SetColor(red)
+""" Render objects bottom row """
 
-# source environment actor objects
-sao = mabdi.VTKPolyDataActorObjects()
-sao.mapper.SetInputConnection(source.GetOutputPort())
-sao.actor.SetMapper(sao.mapper)
+# renSurf = vtk.vtkRenderer()
+# renSurf.SetBackground(1, 1, 1)
 
-# add actors to respective renderers
-diro.ren.AddActor(diao.actor)
-sro.ren.AddActor(pcao.actor)
-sro.ren.AddActor(sao.actor)
+renDy2D = vtk.vtkRenderer()
+renDy2D.SetBackground(1, 1, 1)
+renDy2D.SetViewport(1.0/3, 0.0, 2.0/3, 0.5)
+renDy2D.AddActor(delny2Dao.actor)
+renDy2D.AddActor(sourceAo.actor)
+# renDy2D.AddActor(spcActor)
 
-""" Surface reconstruction """
+# renDy3D = vtk.vtkRenderer()
+# renDy3D.SetBackground(1, 1, 1)
 
-# first reduce the number of points by random sampling
-ptMask = vtk.vtkMaskPoints()
-ptMask.SetInputConnection(fpc.GetOutputPort())
-ptMask.SetOnRatio(50)
-ptMask.RandomModeOn()
-ptMask.SetRandomModeType(0)
+# renSurf.SetViewport(0.0, 0.0, 1.0/3, 0.5)
+# renDy3D.SetViewport(2.0/3, 0.0, 3.0/3, 1.0)
 
-#
-delny = vtk.vtkDelaunay2D()
-mabdi.DebugTimeVTKFilter(delny)
-delny.SetInputConnection(ptMask.GetOutputPort())
-delny.SetAlpha(0.05)
-delny.SetTolerance(0.001)
+# renWin.AddRenderer(renSurf)
 
+# renWin.AddRenderer(renDy3D)
+
+# renSurf.AddActor(surfao.actor)
+# renSurf.AddActor(pointActor)
+
+# renDy3D.AddActor(delny3Dao.actor)
+# renDy3D.AddActor(pointActor)
+
+renWin.AddRenderer(renDy2D)
+
+""" Move the sensor """
+
+rang = np.arange(-40, 41, dtype=float)
+position = np.vstack((rang/20,
+                      np.ones(len(rang)),
+                      np.ones(len(rang))*2)).T
+lookat = np.vstack((rang/40,
+                    np.ones(len(rang))*.5,
+                    np.zeros(len(rang)))).T
+
+for i, (pos, lka) in enumerate(zip(position, lookat)):
+    di.set_sensor_orientation(pos, lka)
+    di.Modified()
+    iren.Render()
+    iren.Start()
+    time.sleep(.1)
+
+
+"""
+surf = vtk.vtkSurfaceReconstructionFilter()
+surf.SetInputConnection(fpc.GetOutputPort())
+
+cf = vtk.vtkContourFilter()
+cf.SetInputConnection(surf.GetOutputPort())
+cf.SetValue(0, 0.0)
+
+reverse = vtk.vtkReverseSense()
+reverse.SetInputConnection(cf.GetOutputPort())
+reverse.ReverseCellsOn()
+reverse.ReverseNormalsOn()
+
+mapper = vtk.vtkPolyDataMapper()
+mapper.SetInputConnection(reverse.GetOutputPort())
+mapper.ScalarVisibilityOff()
+
+surfaceActor = vtk.vtkActor()
+surfaceActor.SetMapper(mapper)
+surfaceActor.GetProperty().SetDiffuseColor(1.0000, 0.3882, 0.2784)
+surfaceActor.GetProperty().SetSpecularColor(1, 1, 1)
+surfaceActor.GetProperty().SetSpecular(.4)
+surfaceActor.GetProperty().SetSpecularPower(50)
+
+sro.ren.AddActor(surfaceActor)
+"""
+
+"""
 # We will now create a nice looking mesh by wrapping the edges in tubes,
 # and putting fat spheres at the points.
 extract = vtk.vtkExtractEdges()
@@ -119,64 +243,4 @@ ballActor.GetProperty().SetSpecular(0.3)
 ballActor.GetProperty().SetSpecularPower(20)
 ballActor.GetProperty().SetAmbient(0.2)
 ballActor.GetProperty().SetDiffuse(0.8)
-
-sro.ren.AddActor(ballActor)
-sro.ren.AddActor(edgeActor)
-
-""" Initialize and do first render """
-
-diro.iren.Initialize()
-diro.iren.Render()
-
-sro.iren.Initialize()
-sro.iren.Render()
-
-""" Filter callback """
-
-mabdi.DebugTimeVTKFilter(ptMask)
-
-""" Move the sensor """
-
-rang = np.arange(-40, 41, dtype=float)
-position = np.vstack((rang/20,
-                      np.ones(len(rang)),
-                      np.ones(len(rang))*2)).T
-lookat = np.vstack((rang/40,
-                    np.ones(len(rang))*.5,
-                    np.zeros(len(rang)))).T
-
-for i, (pos, lka) in enumerate(zip(position, lookat)):
-    fdi.set_sensor_orientation(pos, lka)
-    fdi.Modified()
-    diro.iren.Render()
-    sro.iren.Render()
-    sro.iren.Start()
-    time.sleep(.1)
-
-
-"""
-surf = vtk.vtkSurfaceReconstructionFilter()
-surf.SetInputConnection(fpc.GetOutputPort())
-
-cf = vtk.vtkContourFilter()
-cf.SetInputConnection(surf.GetOutputPort())
-cf.SetValue(0, 0.0)
-
-reverse = vtk.vtkReverseSense()
-reverse.SetInputConnection(cf.GetOutputPort())
-reverse.ReverseCellsOn()
-reverse.ReverseNormalsOn()
-
-mapper = vtk.vtkPolyDataMapper()
-mapper.SetInputConnection(reverse.GetOutputPort())
-mapper.ScalarVisibilityOff()
-
-surfaceActor = vtk.vtkActor()
-surfaceActor.SetMapper(mapper)
-surfaceActor.GetProperty().SetDiffuseColor(1.0000, 0.3882, 0.2784)
-surfaceActor.GetProperty().SetSpecularColor(1, 1, 1)
-surfaceActor.GetProperty().SetSpecular(.4)
-surfaceActor.GetProperty().SetSpecularPower(50)
-
-sro.ren.AddActor(surfaceActor)
 """
