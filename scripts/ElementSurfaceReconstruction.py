@@ -66,7 +66,7 @@ pcAo.actor.GetProperty().SetColor(red)
 spc = vtk.vtkMaskPoints()
 mabdi.DebugTimeVTKFilter(spc)
 spc.SetInputConnection(pc.GetOutputPort())
-spc.SetOnRatio(21)
+spc.SetOnRatio(31)
 spc.RandomModeOff()
 spc.SetRandomModeType(0)
 
@@ -89,6 +89,44 @@ spcActor.GetProperty().SetSpecularPower(20)
 spcActor.GetProperty().SetAmbient(0.2)
 spcActor.GetProperty().SetDiffuse(0.8)
 
+""" vtkSurfaceReconstructionFilter """
+
+# parameters, set 0 to not set them
+surf_neighborhood_size = 5  # default is 20
+surf_sample_spacing = 0
+
+surf = vtk.vtkSurfaceReconstructionFilter()
+mabdi.DebugTimeVTKFilter(surf)
+if surf_neighborhood_size != 0:
+    surf.SetNeighborhoodSize(surf_neighborhood_size)
+if surf_sample_spacing != 0:
+    surf.SetSampleSpacing(surf_sample_spacing)
+surf.SetInputConnection(spc.GetOutputPort())
+
+cf = vtk.vtkContourFilter()
+mabdi.DebugTimeVTKFilter(cf)
+cf.SetInputConnection(surf.GetOutputPort())
+cf.SetValue(0, 0.0)
+
+# Sometimes the contouring algorithm can create a volume whose gradient
+# vector and ordering of polygon (using the right hand rule) are
+# inconsistent. vtkReverseSense cures this problem.
+reverse = vtk.vtkReverseSense()
+mabdi.DebugTimeVTKFilter(reverse)
+reverse.SetInputConnection(cf.GetOutputPort())
+reverse.ReverseCellsOn()
+reverse.ReverseNormalsOn()
+
+surfAo = mabdi.VTKPolyDataActorObjects()
+surfAo.mapper.SetInputConnection(reverse.GetOutputPort())
+
+surfAo.mapper.ScalarVisibilityOff()
+
+surfAo.actor.GetProperty().SetDiffuseColor(red)
+surfAo.actor.GetProperty().SetSpecularColor(1, 1, 1)
+surfAo.actor.GetProperty().SetSpecular(.4)
+surfAo.actor.GetProperty().SetSpecularPower(50)
+
 """ vtkDelaunay2D """
 
 delny2D = vtk.vtkDelaunay2D()
@@ -97,15 +135,39 @@ delny2D.SetInputConnection(spc.GetOutputPort())
 delny2D.SetAlpha(0.05)
 delny2D.SetTolerance(0.001)
 
-delny2Dao = mabdi.VTKPolyDataActorObjects()
-delny2Dao.mapper.SetInputConnection(delny2D.GetOutputPort())
+delny2DAo = mabdi.VTKPolyDataActorObjects()
+delny2DAo.mapper.SetInputConnection(delny2D.GetOutputPort())
 
-delny2Dao.mapper.ScalarVisibilityOff()
+delny2DAo.mapper.ScalarVisibilityOff()
 
-delny2Dao.actor.GetProperty().SetDiffuseColor(1.0000, 0.3882, 0.2784)
-delny2Dao.actor.GetProperty().SetSpecularColor(1, 1, 1)
-delny2Dao.actor.GetProperty().SetSpecular(.4)
-delny2Dao.actor.GetProperty().SetSpecularPower(50)
+delny2DAo.actor.GetProperty().SetDiffuseColor(red)
+delny2DAo.actor.GetProperty().SetSpecularColor(1, 1, 1)
+delny2DAo.actor.GetProperty().SetSpecular(.4)
+delny2DAo.actor.GetProperty().SetSpecularPower(50)
+
+""" vtkDelaunay3D """
+
+# Delaunay3D is used to triangulate the points. The Tolerance is the
+# distance that nearly coincident points are merged
+# together. (Delaunay does better if points are well spaced.) The
+# alpha value is the radius of circumcircles, circumspheres. Any mesh
+# entity whose circumcircle is smaller than this value is output.
+delny3D = vtk.vtkDelaunay3D()
+mabdi.DebugTimeVTKFilter(delny3D)
+delny3D.SetInputConnection(spc.GetOutputPort())
+delny3D.SetTolerance(0.001)
+delny3D.SetAlpha(0.1)
+delny3D.BoundingTriangulationOff()
+
+delny3DAo = mabdi.VTKPolyDataActorObjects()
+delny3DAo.mapper.SetInputConnection(delny3D.GetOutputPort())
+
+delny3DAo.mapper.ScalarVisibilityOff()
+
+delny3DAo.actor.GetProperty().SetDiffuseColor(red)
+delny3DAo.actor.GetProperty().SetSpecularColor(1, 1, 1)
+delny3DAo.actor.GetProperty().SetSpecular(.4)
+delny3DAo.actor.GetProperty().SetSpecularPower(50)
 
 """ Render objects """
 
@@ -133,33 +195,28 @@ renWin.AddRenderer(renSo)
 
 """ Render objects bottom row """
 
-# renSurf = vtk.vtkRenderer()
-# renSurf.SetBackground(1, 1, 1)
+renSurf = vtk.vtkRenderer()
+renSurf.SetBackground(eggshell)
+renSurf.SetViewport(0.0, 0.0, 1.0/3, 0.5)
+renSurf.AddActor(surfAo.actor)
+renSurf.AddActor(sourceAo.actor)
 
 renDy2D = vtk.vtkRenderer()
-renDy2D.SetBackground(1, 1, 1)
+renDy2D.SetBackground(eggshell)
 renDy2D.SetViewport(1.0/3, 0.0, 2.0/3, 0.5)
-renDy2D.AddActor(delny2Dao.actor)
+renDy2D.AddActor(delny2DAo.actor)
 renDy2D.AddActor(sourceAo.actor)
 # renDy2D.AddActor(spcActor)
 
-# renDy3D = vtk.vtkRenderer()
-# renDy3D.SetBackground(1, 1, 1)
+renDy3D = vtk.vtkRenderer()
+renDy3D.SetBackground(eggshell)
+renDy3D.SetViewport(2.0/3, 0.0, 3.0/3, 0.5)
+renDy3D.AddActor(delny3DAo.actor)
+renDy3D.AddActor(sourceAo.actor)
 
-# renSurf.SetViewport(0.0, 0.0, 1.0/3, 0.5)
-# renDy3D.SetViewport(2.0/3, 0.0, 3.0/3, 1.0)
-
-# renWin.AddRenderer(renSurf)
-
-# renWin.AddRenderer(renDy3D)
-
-# renSurf.AddActor(surfao.actor)
-# renSurf.AddActor(pointActor)
-
-# renDy3D.AddActor(delny3Dao.actor)
-# renDy3D.AddActor(pointActor)
-
+renWin.AddRenderer(renSurf)
 renWin.AddRenderer(renDy2D)
+renWin.AddRenderer(renDy3D)
 
 """ Move the sensor """
 
