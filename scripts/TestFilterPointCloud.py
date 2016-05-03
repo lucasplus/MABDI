@@ -1,4 +1,5 @@
 import vtk
+from vtk.util.colors import *
 from vtk.util import numpy_support
 from vtk.numpy_interface import dataset_adapter as dsa
 from vtk.numpy_interface import algorithms as alg
@@ -22,62 +23,52 @@ Script to test FilterPointCloud
 
 source = mabdi.SourceEnvironmentTable()
 source.Update()
+sourceAo = mabdi.VTKPolyDataActorObjects()
+sourceAo.mapper.SetInputConnection(source.GetOutputPort())
+sourceAo.actor.SetMapper(sourceAo.mapper)
+sourceAo.actor.GetProperty().SetColor(slate_grey_light)
+sourceAo.actor.GetProperty().SetOpacity(0.5)
 
-fdi = mabdi.FilterDepthImage()
-fdi.set_polydata(source)
+di = mabdi.FilterDepthImage(offscreen=True)
+di.set_polydata(source)
+diAo = mabdi.VTKImageActorObjects()
+diAo.mapper.SetInputConnection(di.GetOutputPort())
+diAo.mapper.SetColorWindow(1.0)
+diAo.mapper.SetColorLevel(0.5)
 
-fpc = mabdi.FilterPointCloud()
-fpc.SetInputConnection(fdi.GetOutputPort())
+pc = mabdi.FilterPointCloud()
+pc.SetInputConnection(di.GetOutputPort())
+pcAo = mabdi.VTKPolyDataActorObjects()
+pcAo.mapper.SetInputConnection(pc.GetOutputPort())
+pcAo.actor.GetProperty().SetPointSize(1.5)
+pcAo.actor.GetProperty().SetColor(red)
 
 """ Render objects """
 
-ren1 = vtk.vtkRenderer()
-renWin1 = vtk.vtkRenderWindow()
-iren1 = vtk.vtkRenderWindowInteractor()
-renWin1.AddRenderer(ren1)
-iren1.SetRenderWindow(renWin1)
+renWin = vtk.vtkRenderWindow()
+renWin.SetSize(640*3, 480*1)
+iren = vtk.vtkRenderWindowInteractor()
+iren.SetRenderWindow(renWin)
 
-ren2 = vtk.vtkRenderer()
-renWin2 = vtk.vtkRenderWindow()
-iren2 = vtk.vtkRenderWindowInteractor()
-renWin2.AddRenderer(ren2)
-iren2.SetRenderWindow(renWin2)
+# scenario
+renSc = vtk.vtkRenderer()
+renSc.SetBackground(eggshell)
+renSc.SetViewport(0.0, 0.0, 1.0/3, 1.0)
+renSc.AddActor(sourceAo.actor)
+renSc.AddActor(pcAo.actor)
+cameraActor = vtk.vtkCameraActor()
+cameraActor.SetCamera(di.get_vtk_camera())
+cameraActor.SetWidthByHeightRatio(di.get_width_by_height_ratio())
+renSc.AddActor(cameraActor)
 
-""" Set up render objects """
+# sensor output
+renSo = vtk.vtkRenderer()
+renSo.SetViewport(1.0/3, 0.0, 2.0/3, 1.0)
+renSo.SetInteractive(0)
+renSo.AddActor(diAo.actor)
 
-# for displaying depth image
-renWin1.SetSize(640, 480)
-imageMapper = vtk.vtkImageMapper()
-imageMapper.SetInputConnection(fdi.GetOutputPort())
-imageMapper.SetColorWindow(1.0)
-imageMapper.SetColorLevel(0.5)
-imageActor = vtk.vtkActor2D()
-imageActor.SetMapper(imageMapper)
-ren1.AddActor(imageActor)
-
-iren1.Initialize()
-iren1.Render()
-
-# for displaying the point cloud
-mapper = vtk.vtkPolyDataMapper()
-mapper.SetInputConnection(fpc.GetOutputPort())
-actor = vtk.vtkActor()
-actor.SetMapper(mapper)
-actor.GetProperty().SetPointSize(2)
-rgb = [0.0, 0.0, 0.0]
-colors = vtk.vtkNamedColors()
-colors.GetColorRGB("red", rgb)
-actor.GetProperty().SetColor(rgb)
-ren2.AddActor(actor)
-
-emapper = vtk.vtkPolyDataMapper()
-emapper.SetInputConnection(source.GetOutputPort())
-eactor = vtk.vtkActor()
-eactor.SetMapper(emapper)
-ren2.AddActor(eactor)
-
-iren2.Initialize()
-iren2.Render()
+renWin.AddRenderer(renSc)
+renWin.AddRenderer(renSo)
 
 """ Move the sensor """
 
@@ -90,11 +81,10 @@ lookat = np.vstack((rang/40,
                     np.zeros(len(rang)))).T
 
 for i, (pos, lka) in enumerate(zip(position, lookat)):
-    fdi.set_sensor_orientation(pos, lka)
-    fdi.Modified()
-    iren1.Render()
-    iren2.Render()
-    iren2.Start()
-    time.sleep(.1)
+    di.set_sensor_orientation(pos, lka)
+    di.Modified()
+    iren.Render()
+    iren.Start()
+
 
 

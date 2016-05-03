@@ -1,4 +1,6 @@
 import vtk
+from vtk.util.colors import *
+
 import mabdi
 
 import logging

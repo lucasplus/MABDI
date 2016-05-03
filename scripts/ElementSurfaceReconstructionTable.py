@@ -243,33 +243,6 @@ for i, (pos, lka) in enumerate(zip(position, lookat)):
 
 
 """
-surf = vtk.vtkSurfaceReconstructionFilter()
-surf.SetInputConnection(fpc.GetOutputPort())
-
-cf = vtk.vtkContourFilter()
-cf.SetInputConnection(surf.GetOutputPort())
-cf.SetValue(0, 0.0)
-
-reverse = vtk.vtkReverseSense()
-reverse.SetInputConnection(cf.GetOutputPort())
-reverse.ReverseCellsOn()
-reverse.ReverseNormalsOn()
-
-mapper = vtk.vtkPolyDataMapper()
-mapper.SetInputConnection(reverse.GetOutputPort())
-mapper.ScalarVisibilityOff()
-
-surfaceActor = vtk.vtkActor()
-surfaceActor.SetMapper(mapper)
-surfaceActor.GetProperty().SetDiffuseColor(1.0000, 0.3882, 0.2784)
-surfaceActor.GetProperty().SetSpecularColor(1, 1, 1)
-surfaceActor.GetProperty().SetSpecular(.4)
-surfaceActor.GetProperty().SetSpecularPower(50)
-
-sro.ren.AddActor(surfaceActor)
-"""
-
-"""
 # We will now create a nice looking mesh by wrapping the edges in tubes,
 # and putting fat spheres at the points.
 extract = vtk.vtkExtractEdges()

@@ -5,9 +5,6 @@ In this script we are going to compare surface reconstruction methods
 - vtkDelaunay3D
 """
 
-# TODO make it work with the table environment
-# TODO show the table environment as opaque
-
 import os
 import string
 
