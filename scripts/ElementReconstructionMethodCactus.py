@@ -133,7 +133,7 @@ delny3D = vtk.vtkDelaunay3D()
 mabdi.DebugTimeVTKFilter(delny3D)
 delny3D.SetInputConnection(pointSource.GetOutputPort())
 delny3D.SetTolerance(0.001)
-# delny3D.SetAlpha(0.05)
+delny3D.SetAlpha(0.05)
 delny3D.BoundingTriangulationOff()
 
 delny3Dao = mabdi.VTKPolyDataActorObjects()
