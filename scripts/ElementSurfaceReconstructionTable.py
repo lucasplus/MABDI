@@ -156,7 +156,7 @@ delny3D = vtk.vtkDelaunay3D()
 mabdi.DebugTimeVTKFilter(delny3D)
 delny3D.SetInputConnection(spc.GetOutputPort())
 delny3D.SetTolerance(0.001)
-delny3D.SetAlpha(0.1)
+delny3D.SetAlpha(0.01)
 delny3D.BoundingTriangulationOff()
 
 delny3DAo = mabdi.VTKPolyDataActorObjects()
@@ -178,13 +178,19 @@ iren.SetRenderWindow(renWin)
 
 """ Render objects top row """
 
+# scenario
 renSc = vtk.vtkRenderer()
 renSc.SetBackground(eggshell)
 renSc.SetViewport(0.0, 0.5, 1.0/3, 1.0)
 renSc.AddActor(sourceAo.actor)
 renSc.AddActor(pcAo.actor)
 renSc.AddActor(spcActor)
+cameraActor = vtk.vtkCameraActor()
+cameraActor.SetCamera(di.get_vtk_camera())
+cameraActor.SetWidthByHeightRatio(di.get_width_by_height_ratio())
+renSc.AddActor(cameraActor)
 
+# sensor output
 renSo = vtk.vtkRenderer()
 renSo.SetViewport(2.0/3, 0.5, 3.0/3, 1.0)
 renSo.SetInteractive(0)

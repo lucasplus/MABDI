@@ -12,7 +12,7 @@ import logging
 
 
 class FilterDepthImage(VTKPythonAlgorithmBase):
-    def __init__(self):
+    def __init__(self, offscreen=False):
         VTKPythonAlgorithmBase.__init__(self,
                                         nInputPorts=0,
                                         nOutputPorts=1, outputType='vtkImageData')
@@ -24,6 +24,10 @@ class FilterDepthImage(VTKPythonAlgorithmBase):
         # wire them up
         self._renWin.AddRenderer(self._ren)
         self._iren.SetRenderWindow(self._renWin)
+
+        # offscreen rendering
+        if offscreen:
+            self._renWin.SetOffScreenRendering(1)
 
         # kinect intrinsic parameters
         # https://msdn.microsoft.com/en-us/library/hh438998.aspx
@@ -72,6 +76,12 @@ class FilterDepthImage(VTKPythonAlgorithmBase):
         self._ren.GetActiveCamera().SetPosition(in_position)
         self._ren.GetActiveCamera().SetFocalPoint(in_lookat)
         self._iren.Render()
+
+    def get_vtk_camera(self):
+        return self._ren.GetActiveCamera()
+
+    def get_width_by_height_ratio(self):
+        return float(self._renWin.GetSize()[0]) / float(self._renWin.GetSize()[1])
 
     def RequestInformation(self, request, inInfo, outInfo):
         logging.debug('')
