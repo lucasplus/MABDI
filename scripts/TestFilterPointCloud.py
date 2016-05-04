@@ -86,8 +86,11 @@ lookat = np.vstack((rang/40,
 
 for i, (pos, lka) in enumerate(zip(position, lookat)):
     di.set_sensor_orientation(pos, lka)
+    time.sleep(1)
     di.Modified()
+    time.sleep(1)
     iren.Render()
+    time.sleep(1)
     iren.Start()
 
 
