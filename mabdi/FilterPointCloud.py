@@ -8,6 +8,8 @@ from MabdiUtilities import DebugTimeVTKFilter
 
 import numpy as np
 
+import matplotlib.pyplot as plt
+
 from timeit import default_timer as timer
 import logging
 
@@ -32,6 +34,10 @@ class FilterPointCloud(VTKPythonAlgorithmBase):
         self._vgf = vtk.vtkVertexGlyphFilter()
         DebugTimeVTKFilter(self._vgf)
         self._vgf.SetInputData(self._polydata)
+
+    def get_valid_pts_index(self):
+        tmp_valid_pts_index = self._viewport_pts[2, :] < 1.0
+        return tmp_valid_pts_index
 
     def RequestData(self, request, inInfo, outInfo):
         logging.debug('')
@@ -75,6 +81,9 @@ class FilterPointCloud(VTKPythonAlgorithmBase):
         self._points.SetData(vtkarray)
         self._polydata.SetPoints(self._points)
         self._vgf.Update()
+
+        imgplot = plt.imshow(valid_pts_index.reshape((480, 640)), origin='lower')
+        plt.show()
 
         out = vtk.vtkPolyData.GetData(outInfo)
         out.ShallowCopy(self._vgf.GetOutput())

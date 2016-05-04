@@ -1,5 +1,5 @@
 import vtk
-from vtk.util.colors import *
+from vtk.util.colors import eggshell, slate_grey_light, red
 from vtk.util import numpy_support
 from vtk.numpy_interface import dataset_adapter as dsa
 from vtk.numpy_interface import algorithms as alg
@@ -7,6 +7,8 @@ from vtk.numpy_interface import algorithms as alg
 import mabdi
 
 import numpy as np
+
+import matplotlib.pyplot as plt
 
 import time
 
@@ -79,6 +81,8 @@ position = np.vstack((rang/20,
 lookat = np.vstack((rang/40,
                     np.ones(len(rang))*.5,
                     np.zeros(len(rang)))).T
+
+iren.Render()
 
 for i, (pos, lka) in enumerate(zip(position, lookat)):
     di.set_sensor_orientation(pos, lka)
