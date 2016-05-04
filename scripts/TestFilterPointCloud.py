@@ -72,6 +72,8 @@ renSo.AddActor(diAo.actor)
 renWin.AddRenderer(renSc)
 renWin.AddRenderer(renSo)
 
+iren.Render()
+
 """ Move the sensor """
 
 rang = np.arange(-40, 41, dtype=float)
@@ -81,8 +83,6 @@ position = np.vstack((rang/20,
 lookat = np.vstack((rang/40,
                     np.ones(len(rang))*.5,
                     np.zeros(len(rang)))).T
-
-iren.Render()
 
 for i, (pos, lka) in enumerate(zip(position, lookat)):
     di.set_sensor_orientation(pos, lka)

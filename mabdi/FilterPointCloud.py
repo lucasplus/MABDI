@@ -51,14 +51,10 @@ class FilterPointCloud(VTKPythonAlgorithmBase):
             # save the new size and viewport
             (self._sizex, self._sizey) = (inp.sizex, inp.sizey)
             self._viewport = inp.viewport
-            # new display points
+            # new display points (list of all pixel coordinates)
             self._display_pts = np.ones((2, self._sizex * self._sizey))
-            count = 0
-            for i in np.arange(self._sizey):
-                for j in np.arange(self._sizex):
-                    self._display_pts[0, count] = j
-                    self._display_pts[1, count] = i
-                    count += 1
+            self._display_pts[0, :], self._display_pts[1, :] = \
+                zip(*[(j, i) for i in np.arange(self._sizey) for j in np.arange(self._sizex)])
             # new viewport points
             self._viewport_pts = np.ones((4, self._display_pts.shape[1]))
             self._viewport_pts[0, :] = 2.0 * (self._display_pts[0, :] - self._sizex * self._viewport[0]) / (
@@ -82,7 +78,7 @@ class FilterPointCloud(VTKPythonAlgorithmBase):
         self._polydata.SetPoints(self._points)
         self._vgf.Update()
 
-        imgplot = plt.imshow(valid_pts_index.reshape((480, 640)), origin='lower')
+        plt.imshow(valid_pts_index.reshape((480, 640)), origin='lower')
         plt.show()
 
         out = vtk.vtkPolyData.GetData(outInfo)
