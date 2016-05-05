@@ -36,10 +36,6 @@ class FilterPointCloud(VTKPythonAlgorithmBase):
         self._polydata.SetPoints(self._points)
         self._polydata.SetPolys(self._polys)
 
-    def get_valid_pts_index(self):
-        tmp_valid_pts_index = self._viewport_pts[2, :] < 1.0
-        return tmp_valid_pts_index
-
     def RequestData(self, request, inInfo, outInfo):
         logging.debug('')
         start = timer()
