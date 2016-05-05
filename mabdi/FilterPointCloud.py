@@ -35,9 +35,6 @@ class FilterPointCloud(VTKPythonAlgorithmBase):
         self._polydata = vtk.vtkPolyData()
         self._polydata.SetPoints(self._points)
         self._polydata.SetPolys(self._polys)
-        #self._vgf = vtk.vtkVertexGlyphFilter()
-        #DebugTimeVTKFilter(self._vgf)
-        #self._vgf.SetInputData(self._polydata)
 
     def get_valid_pts_index(self):
         tmp_valid_pts_index = self._viewport_pts[2, :] < 1.0
@@ -47,52 +44,17 @@ class FilterPointCloud(VTKPythonAlgorithmBase):
         logging.debug('')
         start = timer()
 
-        # input to filter, vtkImageData
+        # input (vtkImageData)
         inp = vtk.vtkImageData.GetData(inInfo[0])
 
+        # if the vtkImageData size has changed or this is the first time
+        # save new size info and initialize containers
         if (self._sizex, self._sizey, self._viewport) != (inp.sizex, inp.sizey, inp.viewport):
-            logging.debug('Initializing arrays for projection calculation.')
-            tstart = timer()
-            # save the new size and viewport
             (self._sizex, self._sizey) = (inp.sizex, inp.sizey)
             self._viewport = inp.viewport
-            (w, h) = (self._sizex, self._sizey)  # helper variables (width, height)
-            # new display points (list of all pixel coordinates)
-            self._display_pts = np.ones((2, w * h))
-            self._display_pts[0, :], self._display_pts[1, :] = \
-                zip(*[(j, i) for i in np.arange(h) for j in np.arange(w)])
-            # new viewport points
-            self._viewport_pts = np.ones((4, self._display_pts.shape[1]))
-            self._viewport_pts[0, :] = 2.0 * (self._display_pts[0, :] - w * self._viewport[0]) / \
-                (w * (self._viewport[2] - self._viewport[0])) - 1.0
-            self._viewport_pts[1, :] = 2.0 * (self._display_pts[1, :] - h * self._viewport[1]) / \
-                (h * (self._viewport[3] - self._viewport[1])) - 1.0
-            # new world points (of the right size)
-            self._world_pts = np.ones(self._viewport_pts.shape)
-            # cells (list of predefined connectivity )
-            nt = (2*w)*(h-1)  # number of triangles
-            cells = np.zeros((3, nt), dtype=np.int)
-            i = 0
-            while i < (nt/2):
-                if ((i+1) % w) != 0:
-                    cells[:, 2*i] = (i, i+1, w+i)
-                    cells[:, 2*i+1] = (i+1, w+i+1, w+i)
-                i += 1
-            # remove columns with zeros
-            index = np.where(cells.any(axis=0))[0]  # all columns that are non zero
-            cells = cells[:, index]
-            for i in np.arange(cells.shape[1]):
-                (tpt1, tpt2, tpt3) = cells[:, i]  # triangle points
-                self._polys.InsertNextCell(3)
-                self._polys.InsertCellPoint(tpt1)
-                self._polys.InsertCellPoint(tpt2)
-                self._polys.InsertCellPoint(tpt3)
-            self._polydata.SetPolys(self._polys)
-            # time me
-            tend = timer()
-            logging.debug('Initializing arrays for projection calculation {:.4f} seconds'.format(tend - tstart))
+            self._init_containers()
 
-        # update the viewport points
+        # add z values to viewport_pts based on incoming depth image
         self._viewport_pts[2, :] = numpy_support.vtk_to_numpy(inp.GetPointData().GetScalars())
 
         # project to world coordinates
@@ -102,11 +64,11 @@ class FilterPointCloud(VTKPythonAlgorithmBase):
         # index to valid points
         valid_index = self._viewport_pts[2, :] < 1.0
 
-        # update polydata
+        # update vtkPoints
         vtkarray = dsa.numpyTovtkDataArray(self._world_pts[0:3, :].T)
         self._points.SetData(vtkarray)
-        self._polydata.SetPoints(self._points)
 
+        # update output (vtkPolyData)
         out = vtk.vtkPolyData.GetData(outInfo)
         out.ShallowCopy(self._polydata)
 
@@ -115,31 +77,58 @@ class FilterPointCloud(VTKPythonAlgorithmBase):
 
         return 1
 
-"""
-valid_pts_index = self._viewport_pts[2, :] < 1.0
-vtkarray = dsa.numpyTovtkDataArray(self._world_pts[0:3, valid_index].T)
-self._points.SetData(vtkarray)
-self._polydata.SetPoints(self._points)
-self._vgf.Update()
-"""
+    def _init_containers(self):
+        logging.debug('Initializing arrays for projection calculation.')
+        tstart = timer()
 
-"""
-plt.imshow(valid_index.reshape((self._sizey, self._sizex)), origin='lower')
-plt.show()
-"""
+        # helper variables (width, height)
+        (w, h) = (self._sizex, self._sizey)
 
-"""
-# http://stackoverflow.com/a/21448251/4068274
-for i in list(compress(xrange(len(valid_index)), valid_index)):
-    self._points.InsertPoint(i, *self._world_pts[0:3, i])
-"""
+        """ display points (list of all pixel coordinates) """
 
-"""
-for i in np.arange(self._cells.shape[1]):
-            (tpt1, tpt2, tpt3) = self._cells[:, i]  # triangle points
-            if valid_index[tpt1] and valid_index[tpt2] and valid_index[tpt3]:
-                self._polys.InsertNextCell(3)
-                self._polys.InsertCellPoint(tpt1)
-                self._polys.InsertCellPoint(tpt2)
-                self._polys.InsertCellPoint(tpt3)
-"""
+        self._display_pts = np.ones((2, w * h))
+        self._display_pts[0, :], self._display_pts[1, :] = \
+            zip(*[(j, i) for i in np.arange(h) for j in np.arange(w)])
+
+        """ viewport points """
+        # https://github.com/Kitware/VTK/blob/52d45496877b00852a08a5b9819d109c2fd9bfab/Rendering/Core/vtkCoordinate.h#L26
+
+        self._viewport_pts = np.ones((4, self._display_pts.shape[1]))
+        self._viewport_pts[0, :] = 2.0 * (self._display_pts[0, :] - w * self._viewport[0]) / \
+            (w * (self._viewport[2] - self._viewport[0])) - 1.0
+        self._viewport_pts[1, :] = 2.0 * (self._display_pts[1, :] - h * self._viewport[1]) / \
+            (h * (self._viewport[3] - self._viewport[1])) - 1.0
+
+        """ new world points (just initializing the container) """
+
+        self._world_pts = np.ones(self._viewport_pts.shape)
+
+        """ cells (list of triangles created by connecting neighbors in depth image space ) """
+
+        # connectivity on the depth image is almost like a checkerboard pattern
+        # except with two triangles in every checkerboard square
+        nt = (2*w)*(h-1)  # number of triangles
+        cells = np.zeros((3, nt), dtype=np.int)
+        i = 0
+        while i < (nt/2):
+            if ((i+1) % w) != 0:  # if on the side of the image skip
+                cells[:, 2*i] = (i, i+1, w+i)
+                cells[:, 2*i+1] = (i+1, w+i+1, w+i)
+            i += 1
+
+        # remove columns with zeros (the ones we skipped in the while loop)
+        index = np.where(cells.any(axis=0))[0]  # all columns that are non zero
+        cells = cells[:, index]
+
+        # turn our connectivity list into a vtk object (vtkCellArray)
+        for tpt in cells.T:
+            self._polys.InsertNextCell(3)
+            self._polys.InsertCellPoint(tpt[0])
+            self._polys.InsertCellPoint(tpt[1])
+            self._polys.InsertCellPoint(tpt[2])
+        self._polydata.SetPolys(self._polys)
+
+        # time me
+        tend = timer()
+        logging.debug('Initializing arrays for projection calculation {:.4f} seconds'.format(tend - tstart))
+
