@@ -29,7 +29,6 @@ class FilterPointCloud(VTKPythonAlgorithmBase):
         self._display_pts = []
         self._viewport_pts = []
         self._world_pts = []
-        self._cells = []
 
         self._points = vtk.vtkPoints()
         self._polys = vtk.vtkCellArray()
@@ -53,6 +52,7 @@ class FilterPointCloud(VTKPythonAlgorithmBase):
 
         if (self._sizex, self._sizey, self._viewport) != (inp.sizex, inp.sizey, inp.viewport):
             logging.debug('Initializing arrays for projection calculation.')
+            tstart = timer()
             # save the new size and viewport
             (self._sizex, self._sizey) = (inp.sizex, inp.sizey)
             self._viewport = inp.viewport
@@ -78,58 +78,37 @@ class FilterPointCloud(VTKPythonAlgorithmBase):
                     cells[:, 2*i] = (i, i+1, w+i)
                     cells[:, 2*i+1] = (i+1, w+i+1, w+i)
                 i += 1
-            index = np.where(cells.any(axis=0))[0]
-            self._cells = cells[:, index]
+            # remove columns with zeros
+            index = np.where(cells.any(axis=0))[0]  # all columns that are non zero
+            cells = cells[:, index]
+            for i in np.arange(cells.shape[1]):
+                (tpt1, tpt2, tpt3) = cells[:, i]  # triangle points
+                self._polys.InsertNextCell(3)
+                self._polys.InsertCellPoint(tpt1)
+                self._polys.InsertCellPoint(tpt2)
+                self._polys.InsertCellPoint(tpt3)
+            self._polydata.SetPolys(self._polys)
+            # time me
+            tend = timer()
+            logging.debug('Initializing arrays for projection calculation {:.4f} seconds'.format(tend - tstart))
 
         # update the viewport points
         self._viewport_pts[2, :] = numpy_support.vtk_to_numpy(inp.GetPointData().GetScalars())
 
         # project to world coordinates
-        tstart = timer()
         self._world_pts = np.dot(inp.tmat, self._viewport_pts)
         self._world_pts = self._world_pts / self._world_pts[3]
-        tend = timer()
-        logging.debug('Project points {:.4f} seconds'.format(tend - tstart))
 
-        # update polydata
+        # index to valid points
         valid_index = self._viewport_pts[2, :] < 1.0
 
-        tstart = timer()
-        # points = vtk.vtkPoints()
-        # triangles = vtk.vtkCellArray()
-        tend = timer()
-        logging.debug('Initialize vtk objects {:.4f} seconds'.format(tend - tstart))
-
-        # http://stackoverflow.com/a/21448251/4068274
-        tstart = timer()
-        for i in list(compress(xrange(len(valid_index)), valid_index)):
-            self._points.InsertPoint(i, *self._world_pts[0:3, i])
-        tend = timer()
-        logging.debug('Points loop {:.4f} seconds'.format(tend - tstart))
-
-        tstart = timer()
-        for i in np.arange(self._cells.shape[1]):
-            (tpt1, tpt2, tpt3) = self._cells[:, i]  # triangle points
-            if valid_index[tpt1] and valid_index[tpt2] and valid_index[tpt3]:
-                self._polys.InsertNextCell(3)
-                self._polys.InsertCellPoint(tpt1)
-                self._polys.InsertCellPoint(tpt2)
-                self._polys.InsertCellPoint(tpt3)
-        tend = timer()
-        logging.debug('Polys loop {:.4f} seconds'.format(tend - tstart))
-
-        plt.imshow(valid_index.reshape((self._sizey, self._sizex)), origin='lower')
-        plt.show()
-
-        tstart = timer()
-        # self._polydata.SetPoints(points)
-        # self._polydata.SetPolys(triangles)
+        # update polydata
+        vtkarray = dsa.numpyTovtkDataArray(self._world_pts[0:3, :].T)
+        self._points.SetData(vtkarray)
+        self._polydata.SetPoints(self._points)
 
         out = vtk.vtkPolyData.GetData(outInfo)
-        # out.ShallowCopy(self._vgf.GetOutput())
         out.ShallowCopy(self._polydata)
-        tend = timer()
-        logging.debug('The rest {:.4f} seconds'.format(tend - tstart))
 
         end = timer()
         logging.debug('Execution time {:.4f} seconds'.format(end - start))
@@ -138,8 +117,29 @@ class FilterPointCloud(VTKPythonAlgorithmBase):
 
 """
 valid_pts_index = self._viewport_pts[2, :] < 1.0
-vtkarray = dsa.numpyTovtkDataArray(self._world_pts[0:3, valid_pts_index].T)
+vtkarray = dsa.numpyTovtkDataArray(self._world_pts[0:3, valid_index].T)
 self._points.SetData(vtkarray)
 self._polydata.SetPoints(self._points)
 self._vgf.Update()
+"""
+
+"""
+plt.imshow(valid_index.reshape((self._sizey, self._sizex)), origin='lower')
+plt.show()
+"""
+
+"""
+# http://stackoverflow.com/a/21448251/4068274
+for i in list(compress(xrange(len(valid_index)), valid_index)):
+    self._points.InsertPoint(i, *self._world_pts[0:3, i])
+"""
+
+"""
+for i in np.arange(self._cells.shape[1]):
+            (tpt1, tpt2, tpt3) = self._cells[:, i]  # triangle points
+            if valid_index[tpt1] and valid_index[tpt2] and valid_index[tpt3]:
+                self._polys.InsertNextCell(3)
+                self._polys.InsertCellPoint(tpt1)
+                self._polys.InsertCellPoint(tpt2)
+                self._polys.InsertCellPoint(tpt3)
 """
