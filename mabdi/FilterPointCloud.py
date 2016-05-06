@@ -8,10 +8,6 @@ from MabdiUtilities import DebugTimeVTKFilter
 
 import numpy as np
 
-from itertools import compress
-
-import matplotlib.pyplot as plt
-
 from timeit import default_timer as timer
 import logging
 
@@ -36,6 +32,14 @@ class FilterPointCloud(VTKPythonAlgorithmBase):
         self._polydata.SetPoints(self._points)
         self._polydata.SetPolys(self._polys)
 
+        self._extract = vtk.vtkExtractPolyDataGeometry()
+        DebugTimeVTKFilter(self._extract)
+        self._extract.SetInputData(self._polydata)
+        planefunc = vtk.vtkPlane()
+        planefunc.SetNormal(0.0, -1.0, 0.0)
+        planefunc.SetOrigin(0.0, -1.0, 0.0)
+        self._extract.SetImplicitFunction(planefunc)
+
     def RequestData(self, request, inInfo, outInfo):
         logging.debug('')
         start = timer()
@@ -57,8 +61,9 @@ class FilterPointCloud(VTKPythonAlgorithmBase):
         self._world_pts = np.dot(inp.tmat, self._viewport_pts)
         self._world_pts = self._world_pts / self._world_pts[3]
 
-        # index to valid points
-        valid_index = self._viewport_pts[2, :] < 1.0
+        # index to invalid points
+        invalid_index = ~(self._viewport_pts[2, :] < 1.0)
+        self._world_pts[0:3, invalid_index] = np.array([[0.0], [-2.0], [0.0]])
 
         # update vtkPoints
         vtkarray = dsa.numpyTovtkDataArray(self._world_pts[0:3, :].T)
@@ -66,7 +71,8 @@ class FilterPointCloud(VTKPythonAlgorithmBase):
 
         # update output (vtkPolyData)
         out = vtk.vtkPolyData.GetData(outInfo)
-        out.ShallowCopy(self._polydata)
+        self._extract.Update()
+        out.ShallowCopy(self._extract.GetOutput())
 
         end = timer()
         logging.debug('Execution time {:.4f} seconds'.format(end - start))

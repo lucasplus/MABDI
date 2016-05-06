@@ -108,7 +108,8 @@ class SourceEnvironmentTable(VTKPythonAlgorithmBase):
         return 1
 
     def set_object_state(self, object_name='default', state='default'):
-        """Add or remove objects from the environment.
+        """
+        Add or remove objects from the environment.
         :param object_name: Name of object to change the state of.
         :param state: Have the object in the environment?
         """
