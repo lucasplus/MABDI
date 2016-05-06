@@ -7,6 +7,8 @@ from vtk.numpy_interface import algorithms as alg
 from MabdiUtilities import DebugTimeVTKFilter
 
 import numpy as np
+from scipy import ndimage
+import matplotlib.pyplot as plt
 
 from timeit import default_timer as timer
 import logging
@@ -54,16 +56,39 @@ class FilterPointCloud(VTKPythonAlgorithmBase):
             self._viewport = inp.viewport
             self._init_containers()
 
+        # the incoming depth image
+        di = numpy_support.vtk_to_numpy(inp.GetPointData().GetScalars()).reshape((self._sizey, self._sizex))
+
         # add z values to viewport_pts based on incoming depth image
-        self._viewport_pts[2, :] = numpy_support.vtk_to_numpy(inp.GetPointData().GetScalars())
+        self._viewport_pts[2, :] = di.reshape(-1)
 
         # project to world coordinates
         self._world_pts = np.dot(inp.tmat, self._viewport_pts)
         self._world_pts = self._world_pts / self._world_pts[3]
 
-        # index to invalid points
-        invalid_index = ~(self._viewport_pts[2, :] < 1.0)
+        """ Remove invalid points """
+
+        # index to pts outside sensor range (defined by vtkCamera clipping range)
+        outside_range = ~(di < 1.0)
+
+        # find pixel neighbors with large differences in value
+        kh = np.array([[1, -1], [0, 0]])
+        edges_h = abs(ndimage.convolve(di,
+                                       kh,
+                                       mode='nearest')) > 0.01
+        kv = np.array([[1, 0], [-1, 0]])
+        edges_v = abs(ndimage.convolve(di,
+                                       kv,
+                                       mode='nearest')) > 0.01
+
+        # combine all the points found to be invalid
+        # and set them to a value underneath the "floor of the environment"
+        invalid_index = np.logical_or.reduce((outside_range.reshape(-1),
+                                              edges_h.reshape(-1),
+                                              edges_v.reshape(-1)))
         self._world_pts[0:3, invalid_index] = np.array([[0.0], [-2.0], [0.0]])
+
+        """ Update and set filter output """
 
         # update vtkPoints
         vtkarray = dsa.numpyTovtkDataArray(self._world_pts[0:3, :].T)
@@ -134,3 +159,12 @@ class FilterPointCloud(VTKPythonAlgorithmBase):
         tend = timer()
         logging.debug('Initializing arrays for projection calculation {:.4f} seconds'.format(tend - tstart))
 
+"""
+# show me
+# plt.imshow(di, origin='lower')
+plt.imshow(
+    invalid_index.reshape((self._sizey, self._sizex)),
+    origin='lower',
+    interpolation='none')
+plt.show()
+"""
