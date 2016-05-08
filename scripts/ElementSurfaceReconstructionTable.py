@@ -55,7 +55,7 @@ diAo.mapper.SetColorWindow(1.0)
 diAo.mapper.SetColorLevel(0.5)
 
 # point cloud
-pc = mabdi.FilterPointCloud()
+pc = mabdi.FilterDepthImageToSurface()
 pc.SetInputConnection(di.GetOutputPort())
 pcAo = mabdi.VTKPolyDataActorObjects()
 pcAo.mapper.SetInputConnection(pc.GetOutputPort())
