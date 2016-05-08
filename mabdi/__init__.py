@@ -1,9 +1,8 @@
 
 from SourceEnvironmentTable import SourceEnvironmentTable
 from FilterDepthImage import FilterDepthImage
-from FilterPointCloud import FilterPointCloud
+from FilterDepthImageToSurface import FilterDepthImageToSurface
 
-from MabdiUtilities import VTKRenderObjects
 from MabdiUtilities import VTKImageActorObjects
 from MabdiUtilities import VTKPolyDataActorObjects
 from MabdiUtilities import DebugTimeVTKFilter

@@ -18,30 +18,27 @@ logging.basicConfig(level=logging.DEBUG,
                     format="%(levelname)s %(module)s @ %(funcName)s: %(message)s")
 
 """
-Script to test FilterPointCloud
+Script to test FilterDepthImageToSurface
 """
 
 """ Filters and sources """
 
 source = mabdi.SourceEnvironmentTable()
 source.Update()
-sourceAo = mabdi.VTKPolyDataActorObjects()
-sourceAo.mapper.SetInputConnection(source.GetOutputPort())
+sourceAo = mabdi.VTKPolyDataActorObjects(source)
 sourceAo.actor.SetMapper(sourceAo.mapper)
 sourceAo.actor.GetProperty().SetColor(slate_grey_light)
 sourceAo.actor.GetProperty().SetOpacity(0.5)
 
 di = mabdi.FilterDepthImage(offscreen=True)
 di.set_polydata(source)
-diAo = mabdi.VTKImageActorObjects()
-diAo.mapper.SetInputConnection(di.GetOutputPort())
+diAo = mabdi.VTKImageActorObjects(di)
 diAo.mapper.SetColorWindow(1.0)
 diAo.mapper.SetColorLevel(0.5)
 
-pc = mabdi.FilterPointCloud()
+pc = mabdi.FilterDepthImageToSurface()
 pc.SetInputConnection(di.GetOutputPort())
-pcAo = mabdi.VTKPolyDataActorObjects()
-pcAo.mapper.SetInputConnection(pc.GetOutputPort())
+pcAo = mabdi.VTKPolyDataActorObjects(pc)
 pcAo.actor.GetProperty().SetPointSize(1.5)
 pcAo.actor.GetProperty().SetColor(red)
 

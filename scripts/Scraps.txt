@@ -1,0 +1,21 @@
+
+# show each vertex of a polydata as a sphere
+
+# subsampled point cloud actor
+ball = vtk.vtkSphereSource()
+ball.SetRadius(0.01)
+ball.SetThetaResolution(12)
+ball.SetPhiResolution(12)
+balls = vtk.vtkGlyph3D()
+balls.SetInputConnection(spc.GetOutputPort())
+balls.SetSourceConnection(ball.GetOutputPort())
+mapBalls = vtk.vtkPolyDataMapper()
+mapBalls.SetInputConnection(balls.GetOutputPort())
+spcActor = vtk.vtkActor()
+spcActor.SetMapper(mapBalls)
+spcActor.GetProperty().SetColor(hot_pink)
+spcActor.GetProperty().SetSpecularColor(1, 1, 1)
+spcActor.GetProperty().SetSpecular(0.3)
+spcActor.GetProperty().SetSpecularPower(20)
+spcActor.GetProperty().SetAmbient(0.2)
+spcActor.GetProperty().SetDiffuse(0.8)

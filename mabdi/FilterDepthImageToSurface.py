@@ -14,7 +14,7 @@ from timeit import default_timer as timer
 import logging
 
 
-class FilterPointCloud(VTKPythonAlgorithmBase):
+class FilterDepthImageToSurface(VTKPythonAlgorithmBase):
     def __init__(self):
         VTKPythonAlgorithmBase.__init__(self,
                                         nInputPorts=1, inputType='vtkImageData',
