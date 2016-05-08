@@ -12,10 +12,12 @@ import logging
 
 
 class FilterDepthImage(VTKPythonAlgorithmBase):
-    def __init__(self, offscreen=False):
+    def __init__(self, offscreen=False, noise=False):
         VTKPythonAlgorithmBase.__init__(self,
                                         nInputPorts=0,
                                         nOutputPorts=1, outputType='vtkImageData')
+        self._noise = noise
+
         # vtk render objects
         self._ren = vtk.vtkRenderer()
         self._renWin = vtk.vtkRenderWindow()
@@ -70,8 +72,7 @@ class FilterDepthImage(VTKPythonAlgorithmBase):
         :param in_position: Position of sensor in world coordinates.
         :param in_lookat: Where the sensor is looking in world coordinates.
         """
-        logging.debug('')
-        logging.debug('position{} lookat{}'.format(in_position, in_lookat))
+        logging.info('position{} lookat{}'.format(in_position, in_lookat))
 
         self._ren.GetActiveCamera().SetPosition(in_position)
         self._ren.GetActiveCamera().SetFocalPoint(in_lookat)
@@ -104,6 +105,12 @@ class FilterDepthImage(VTKPythonAlgorithmBase):
         vfa = vtk.vtkFloatArray()
         ib = self._imageBounds
         self._renWin.GetZbufferData(ib[0], ib[1], ib[2], ib[3], vfa)
+
+        # add noise
+        if self._noise:
+            nvfa = numpy_support.vtk_to_numpy(vfa)
+            nvfa += 0.002 * nvfa * np.random.normal(0.0, 1.0, nvfa.shape)
+            vfa = dsa.numpyTovtkDataArray(nvfa)
 
         # pack the depth values into the output vtkImageData
         out = vtk.vtkImageData.GetData(outInfo)

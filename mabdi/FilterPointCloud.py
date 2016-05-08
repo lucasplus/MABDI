@@ -57,7 +57,8 @@ class FilterPointCloud(VTKPythonAlgorithmBase):
             self._init_containers()
 
         # the incoming depth image
-        di = numpy_support.vtk_to_numpy(inp.GetPointData().GetScalars()).reshape((self._sizey, self._sizex))
+        di = numpy_support.vtk_to_numpy(inp.GetPointData().GetScalars())\
+            .reshape((self._sizey, self._sizex))
 
         # add z values to viewport_pts based on incoming depth image
         self._viewport_pts[2, :] = di.reshape(-1)
@@ -72,21 +73,31 @@ class FilterPointCloud(VTKPythonAlgorithmBase):
         outside_range = ~(di < 1.0)
 
         # find pixel neighbors with large differences in value
+        # http://docs.scipy.org/doc/scipy/reference/tutorial/ndimage.html
         kh = np.array([[1, -1], [0, 0]])
         edges_h = abs(ndimage.convolve(di,
                                        kh,
-                                       mode='nearest')) > 0.01
+                                       mode='nearest',
+                                       origin=-1)) > 0.01
         kv = np.array([[1, 0], [-1, 0]])
         edges_v = abs(ndimage.convolve(di,
                                        kv,
-                                       mode='nearest')) > 0.01
+                                       mode='nearest',
+                                       origin=-1)) > 0.01
 
         # combine all the points found to be invalid
         # and set them to a value underneath the "floor of the environment"
+        # http://stackoverflow.com/a/20528566/4068274
         invalid_index = np.logical_or.reduce((outside_range.reshape(-1),
                                               edges_h.reshape(-1),
                                               edges_v.reshape(-1)))
         self._world_pts[0:3, invalid_index] = np.array([[0.0], [-2.0], [0.0]])
+
+        # plt.imshow(
+        #            edges_h,
+        #            origin='lower',
+        #            interpolation='none')
+        # plt.show()
 
         """ Update and set filter output """
 
@@ -97,6 +108,7 @@ class FilterPointCloud(VTKPythonAlgorithmBase):
         # update output (vtkPolyData)
         out = vtk.vtkPolyData.GetData(outInfo)
         self._extract.Update()
+        logging.info('Number of triangles: {}'.format(self._extract.GetOutput().GetNumberOfCells()))
         out.ShallowCopy(self._extract.GetOutput())
 
         end = timer()
