@@ -8,6 +8,9 @@ from timeit import default_timer as timer
 import logging
 
 
+# TODO get both incoming images view them and their difference
+# will need a static figure to render to I think
+
 class FilterClassifier(VTKPythonAlgorithmBase):
     def __init__(self):
         VTKPythonAlgorithmBase.__init__(self,

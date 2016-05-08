@@ -26,7 +26,6 @@ Script to test FilterDepthImageToSurface
 source = mabdi.SourceEnvironmentTable()
 source.Update()
 sourceAo = mabdi.VTKPolyDataActorObjects(source)
-sourceAo.actor.SetMapper(sourceAo.mapper)
 sourceAo.actor.GetProperty().SetColor(slate_grey_light)
 sourceAo.actor.GetProperty().SetOpacity(0.5)
 
@@ -36,11 +35,11 @@ diAo = mabdi.VTKImageActorObjects(di)
 diAo.mapper.SetColorWindow(1.0)
 diAo.mapper.SetColorLevel(0.5)
 
-pc = mabdi.FilterDepthImageToSurface()
-pc.SetInputConnection(di.GetOutputPort())
-pcAo = mabdi.VTKPolyDataActorObjects(pc)
-pcAo.actor.GetProperty().SetPointSize(1.5)
-pcAo.actor.GetProperty().SetColor(red)
+surf = mabdi.FilterDepthImageToSurface()
+surf.SetInputConnection(di.GetOutputPort())
+surfAo = mabdi.VTKPolyDataActorObjects(surf)
+surfAo.actor.GetProperty().SetPointSize(1.5)
+surfAo.actor.GetProperty().SetColor(red)
 
 """ Render objects """
 
@@ -54,7 +53,7 @@ renSc = vtk.vtkRenderer()
 renSc.SetBackground(eggshell)
 renSc.SetViewport(0.0, 0.0, 1.0/3, 1.0)
 renSc.AddActor(sourceAo.actor)
-renSc.AddActor(pcAo.actor)
+renSc.AddActor(surfAo.actor)
 cameraActor = vtk.vtkCameraActor()
 cameraActor.SetCamera(di.get_vtk_camera())
 cameraActor.SetWidthByHeightRatio(di.get_width_by_height_ratio())
