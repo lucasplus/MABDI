@@ -21,22 +21,30 @@ class FilterWorldMesh(VTKPythonAlgorithmBase):
                                         nOutputPorts=1, outputType='vtkPolyData')
 
         self._worldmesh = vtk.vtkAppendPolyData()
+        self._cleared = False
 
     def clear_world_mesh(self):
         del self._worldmesh
         self._worldmesh = vtk.vtkAppendPolyData()
+        self._cleared = True
         return 1
 
     def RequestData(self, request, inInfo, outInfo):
         logging.debug('')
         start = timer()
 
-        # in polydata
+        # input polydata
         # have to make a copy otherwise polys will not show up in the render
         # even though GetNumberOfCells() says they should be there
+        # ugly if statement is so that clear_world_mesh() works properly
+        # Has something to do with the input to FilterWorldMesh is also a
+        # function of it's output. I need to draw it out.
         tmp = vtk.vtkPolyData.GetData(inInfo[0])
         inp = vtk.vtkPolyData()
-        inp.ShallowCopy(tmp)
+        if not self._cleared:
+            inp.ShallowCopy(tmp)
+        else:
+            self._cleared = False
 
         # add to world mesh
         self._worldmesh.AddInputData(inp)
