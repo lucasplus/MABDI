@@ -1,5 +1,5 @@
 import vtk
-from vtk.util.colors import eggshell, red, slate_grey_light
+from vtk.util.colors import eggshell, slate_grey_light, red, yellow, salmon
 from vtk.util import numpy_support
 from vtk.numpy_interface import dataset_adapter as dsa
 from vtk.numpy_interface import algorithms as alg
@@ -8,7 +8,7 @@ import mabdi
 
 import numpy as np
 
-import time
+from timeit import default_timer as timer
 import logging
 
 logging.basicConfig(level=logging.DEBUG,
@@ -32,7 +32,7 @@ source.Update()
 sourceAo = mabdi.VTKPolyDataActorObjects(source)
 sourceAo.actor.SetMapper(sourceAo.mapper)
 sourceAo.actor.GetProperty().SetColor(slate_grey_light)
-sourceAo.actor.GetProperty().SetOpacity(0.5)
+sourceAo.actor.GetProperty().SetOpacity(0.2)
 
 di = mabdi.FilterDepthImage(offscreen=True)
 di.set_polydata(source)
@@ -45,9 +45,16 @@ surf.SetInputConnection(di.GetOutputPort())
 surfAo = mabdi.VTKPolyDataActorObjects(surf)
 surfAo.actor.GetProperty().SetPointSize(1.5)
 surfAo.actor.GetProperty().SetColor(red)
+surfAo.actor.GetProperty().SetOpacity(1.0)
+
+mesh = mabdi.FilterWorldMesh()
+mesh.SetInputConnection(surf.GetOutputPort())
+meshAo = mabdi.VTKPolyDataActorObjects(mesh)
+meshAo.actor.GetProperty().SetColor(salmon)
+meshAo.actor.GetProperty().SetOpacity(0.2)
 
 sdi = mabdi.FilterDepthImage(offscreen=True)
-sdi.set_polydata(surf)
+sdi.set_polydata(mesh)
 sdiAo = mabdi.VTKImageActorObjects(sdi)
 sdiAo.mapper.SetColorWindow(1.0)
 sdiAo.mapper.SetColorLevel(0.5)
@@ -71,9 +78,10 @@ renScenario.SetViewport(0.0, 0.0, 1.0 / 3, 1.0)
 cameraActor = vtk.vtkCameraActor()
 cameraActor.SetCamera(di.get_vtk_camera())
 cameraActor.SetWidthByHeightRatio(di.get_width_by_height_ratio())
+renScenario.AddActor(cameraActor)
 renScenario.AddActor(sourceAo.actor)
 renScenario.AddActor(surfAo.actor)
-renScenario.AddActor(cameraActor)
+renScenario.AddActor(meshAo.actor)
 
 # sensor output
 renSensor = vtk.vtkRenderer()
@@ -95,7 +103,7 @@ iren.Initialize()
 
 """ Move the sensor """
 
-rang = np.arange(-40, 41, dtype=float)
+rang = np.arange(-40, 41, 10, dtype=float)
 position = np.vstack((rang/20,
                       np.ones(len(rang)),
                       np.ones(len(rang))*2)).T
@@ -103,13 +111,24 @@ lookat = np.vstack((rang/40,
                     np.ones(len(rang))*.5,
                     np.zeros(len(rang)))).T
 
+mesh.clear_world_mesh()
 for i, (pos, lka) in enumerate(zip(position, lookat)):
+    logging.info('START LOOP')
+    start = timer()
+
     di.set_sensor_orientation(pos, lka)
     di.Modified()
+
     sdi.set_sensor_orientation(pos, lka)
     sdi.Modified()
+
     classifier.Update()
+
+    mesh.Update()
+
     iren.Render()
     iren.Start()
 
+    end = timer()
+    logging.info('END LOOP time {:.4f} seconds'.format(end - start))
 
