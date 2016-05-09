@@ -97,10 +97,6 @@ class FilterDepthImage(VTKPythonAlgorithmBase):
         logging.debug('')
         start = timer()
 
-        # get current extent
-        info = outInfo.GetInformationObject(0)
-        ue = info.Get(vtk.vtkStreamingDemandDrivenPipeline.UPDATE_EXTENT())
-
         # get the depth values
         vfa = vtk.vtkFloatArray()
         ib = self._imageBounds
@@ -113,6 +109,8 @@ class FilterDepthImage(VTKPythonAlgorithmBase):
             vfa = dsa.numpyTovtkDataArray(nvfa)
 
         # pack the depth values into the output vtkImageData
+        info = outInfo.GetInformationObject(0)
+        ue = info.Get(vtk.vtkStreamingDemandDrivenPipeline.UPDATE_EXTENT())
         out = vtk.vtkImageData.GetData(outInfo)
         out.GetPointData().SetScalars(vfa)
         out.SetExtent(ue)

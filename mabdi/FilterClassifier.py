@@ -20,7 +20,7 @@ class FilterClassifier(VTKPythonAlgorithmBase):
                                         nInputPorts=2, inputType='vtkImageData',
                                         nOutputPorts=1, outputType='vtkImageData')
 
-        self._f, (self._ax1, self._ax2, self._ax3) = plt.subplots(1, 3, sharey=True)
+        self._f, (self._ax1, self._ax2, self._ax3) = plt.subplots(1, 3, sharex=False, sharey=True)
         self._f.show()
 
     def RequestInformation(self, request, inInfo, outInfo):
