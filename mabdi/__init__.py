@@ -1,6 +1,7 @@
 
 from SourceEnvironmentTable import SourceEnvironmentTable
 from FilterDepthImage import FilterDepthImage
+from FilterClassifier import FilterClassifier
 from FilterDepthImageToSurface import FilterDepthImageToSurface
 
 from MabdiUtilities import VTKImageActorObjects

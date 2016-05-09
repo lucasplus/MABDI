@@ -34,7 +34,7 @@ sourceAo.actor.SetMapper(sourceAo.mapper)
 sourceAo.actor.GetProperty().SetColor(slate_grey_light)
 sourceAo.actor.GetProperty().SetOpacity(0.5)
 
-di = mabdi.FilterDepthImage(offscreen=False)
+di = mabdi.FilterDepthImage(offscreen=True)
 di.set_polydata(source)
 diAo = mabdi.VTKImageActorObjects(di)
 diAo.mapper.SetColorWindow(1.0)
@@ -46,11 +46,16 @@ surfAo = mabdi.VTKPolyDataActorObjects(surf)
 surfAo.actor.GetProperty().SetPointSize(1.5)
 surfAo.actor.GetProperty().SetColor(red)
 
-sdi = mabdi.FilterDepthImage(offscreen=False)
+sdi = mabdi.FilterDepthImage(offscreen=True)
 sdi.set_polydata(surf)
 sdiAo = mabdi.VTKImageActorObjects(sdi)
 sdiAo.mapper.SetColorWindow(1.0)
 sdiAo.mapper.SetColorLevel(0.5)
+
+classifier = mabdi.FilterClassifier()
+classifier.AddInputConnection(0, di.GetOutputPort())
+classifier.AddInputConnection(1, sdi.GetOutputPort())
+classifier.Update()
 
 """ Render objects """
 
@@ -86,7 +91,7 @@ renWin.AddRenderer(renScenario)
 renWin.AddRenderer(renSensor)
 renWin.AddRenderer(renSSensor)
 
-iren.Render()
+iren.Initialize()
 
 """ Move the sensor """
 
@@ -103,6 +108,7 @@ for i, (pos, lka) in enumerate(zip(position, lookat)):
     di.Modified()
     sdi.set_sensor_orientation(pos, lka)
     sdi.Modified()
+    classifier.Update()
     iren.Render()
     iren.Start()
 
