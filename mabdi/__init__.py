@@ -3,6 +3,7 @@ from SourceEnvironmentTable import SourceEnvironmentTable
 from FilterDepthImage import FilterDepthImage
 from FilterClassifier import FilterClassifier
 from FilterDepthImageToSurface import FilterDepthImageToSurface
+from FilterWorldMesh import FilterWorldMesh
 
 from MabdiUtilities import VTKImageActorObjects
 from MabdiUtilities import VTKPolyDataActorObjects
