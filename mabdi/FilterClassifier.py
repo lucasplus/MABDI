@@ -51,7 +51,7 @@ class FilterClassifier(VTKPythonAlgorithmBase):
         im1 = numpy_support.vtk_to_numpy(inp1.GetPointData().GetScalars()).reshape(480, 640)
         im2 = numpy_support.vtk_to_numpy(inp2.GetPointData().GetScalars()).reshape(480, 640)
 
-        difim = im1 - im2
+        difim = abs(im1 - im2) > 0.01
 
         self._ax1.imshow(im1, origin='lower', interpolation='none')
         self._ax2.imshow(im2, origin='lower', interpolation='none')

@@ -34,7 +34,7 @@ sourceAo.actor.SetMapper(sourceAo.mapper)
 sourceAo.actor.GetProperty().SetColor(slate_grey_light)
 sourceAo.actor.GetProperty().SetOpacity(0.2)
 
-di = mabdi.FilterDepthImage(offscreen=True)
+di = mabdi.FilterDepthImage(offscreen=True, name='sensor')
 di.set_polydata(source)
 diAo = mabdi.VTKImageActorObjects(di)
 diAo.mapper.SetColorWindow(1.0)
@@ -53,7 +53,7 @@ meshAo = mabdi.VTKPolyDataActorObjects(mesh)
 meshAo.actor.GetProperty().SetColor(salmon)
 meshAo.actor.GetProperty().SetOpacity(0.2)
 
-sdi = mabdi.FilterDepthImage(offscreen=True)
+sdi = mabdi.FilterDepthImage(offscreen=False, name='simulated sensor')
 sdi.set_polydata(mesh)
 sdiAo = mabdi.VTKImageActorObjects(sdi)
 sdiAo.mapper.SetColorWindow(1.0)
@@ -96,14 +96,14 @@ renSSensor.SetInteractive(0)
 renSSensor.AddActor(sdiAo.actor)
 
 renWin.AddRenderer(renScenario)
-renWin.AddRenderer(renSensor)
-renWin.AddRenderer(renSSensor)
+# renWin.AddRenderer(renSensor)
+# renWin.AddRenderer(renSSensor)
 
 iren.Initialize()
 
 """ Move the sensor """
 
-rang = np.arange(-40, 41, 10, dtype=float)
+rang = np.arange(-40, 41, 2, dtype=float)
 position = np.vstack((rang/20,
                       np.ones(len(rang)),
                       np.ones(len(rang))*2)).T
@@ -111,22 +111,31 @@ lookat = np.vstack((rang/40,
                     np.ones(len(rang))*.5,
                     np.zeros(len(rang)))).T
 
-mesh.clear_world_mesh()
+# mesh.clear_world_mesh()
+# mesh.Update()
+# sdi.UpdateInformation()
 for i, (pos, lka) in enumerate(zip(position, lookat)):
     logging.info('START LOOP')
     start = timer()
 
     di.set_sensor_orientation(pos, lka)
+    sdi.set_sensor_orientation(pos, lka)
+
+    print "di.Modified()"
     di.Modified()
 
-    sdi.set_sensor_orientation(pos, lka)
+    print "sdi.Modified()"
     sdi.Modified()
 
+    print "classifier.Update()"
     classifier.Update()
 
+    print "mesh.Update()"
     mesh.Update()
 
+    print "iren.Render()"
     iren.Render()
+
     iren.Start()
 
     end = timer()

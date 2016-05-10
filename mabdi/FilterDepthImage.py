@@ -12,10 +12,12 @@ import logging
 
 
 class FilterDepthImage(VTKPythonAlgorithmBase):
-    def __init__(self, offscreen=False, noise=False):
+    def __init__(self, offscreen=False, noise=False, name='none'):
         VTKPythonAlgorithmBase.__init__(self,
                                         nInputPorts=0,
                                         nOutputPorts=1, outputType='vtkImageData')
+        self._name = name
+
         self._noise = noise
 
         # vtk render objects
@@ -37,8 +39,12 @@ class FilterDepthImage(VTKPythonAlgorithmBase):
         self._ren.GetActiveCamera().SetViewAngle(60.0)
         self._ren.GetActiveCamera().SetClippingRange(0.8, 4.0)
         self._iren.GetInteractorStyle().SetAutoAdjustCameraClippingRange(0)
-        self._ren.GetActiveCamera().SetPosition(0.0, 0.5, 2.0)
-        self._ren.GetActiveCamera().SetFocalPoint(0.0, 0.5, 0.0)
+
+        # have it looking down and underneath the "floor"
+        # so that it will produce a blank vtkImageData until
+        # set_sensor_orientation() is called
+        self._ren.GetActiveCamera().SetPosition(0.0, -20.0, 0.0)
+        self._ren.GetActiveCamera().SetFocalPoint(0.0, -25.0, 0.0)
 
         # calculate image bounds
         self._imageBounds = [0, 0, 0, 0]
@@ -94,7 +100,7 @@ class FilterDepthImage(VTKPythonAlgorithmBase):
         return 1
 
     def RequestData(self, request, inInfo, outInfo):
-        logging.debug('')
+        logging.debug('{}'.format(self._name))
         start = timer()
 
         # get the depth values

@@ -21,13 +21,6 @@ class FilterWorldMesh(VTKPythonAlgorithmBase):
                                         nOutputPorts=1, outputType='vtkPolyData')
 
         self._worldmesh = vtk.vtkAppendPolyData()
-        self._cleared = False
-
-    def clear_world_mesh(self):
-        del self._worldmesh
-        self._worldmesh = vtk.vtkAppendPolyData()
-        self._cleared = True
-        return 1
 
     def RequestData(self, request, inInfo, outInfo):
         logging.debug('')
@@ -41,10 +34,7 @@ class FilterWorldMesh(VTKPythonAlgorithmBase):
         # function of it's output. I need to draw it out.
         tmp = vtk.vtkPolyData.GetData(inInfo[0])
         inp = vtk.vtkPolyData()
-        if not self._cleared:
-            inp.ShallowCopy(tmp)
-        else:
-            self._cleared = False
+        inp.ShallowCopy(tmp)
 
         # add to world mesh
         self._worldmesh.AddInputData(inp)
