@@ -96,8 +96,8 @@ renSSensor.SetInteractive(0)
 renSSensor.AddActor(sdiAo.actor)
 
 renWin.AddRenderer(renScenario)
-# renWin.AddRenderer(renSensor)
-# renWin.AddRenderer(renSSensor)
+renWin.AddRenderer(renSensor)
+renWin.AddRenderer(renSSensor)
 
 iren.Initialize()
 
@@ -111,9 +111,6 @@ lookat = np.vstack((rang/40,
                     np.ones(len(rang))*.5,
                     np.zeros(len(rang)))).T
 
-# mesh.clear_world_mesh()
-# mesh.Update()
-# sdi.UpdateInformation()
 for i, (pos, lka) in enumerate(zip(position, lookat)):
     logging.info('START LOOP')
     start = timer()

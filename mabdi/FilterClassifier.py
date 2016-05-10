@@ -51,19 +51,22 @@ class FilterClassifier(VTKPythonAlgorithmBase):
         im1 = numpy_support.vtk_to_numpy(inp1.GetPointData().GetScalars()).reshape(480, 640)
         im2 = numpy_support.vtk_to_numpy(inp2.GetPointData().GetScalars()).reshape(480, 640)
 
-        difim = abs(im1 - im2) > 0.01
+        difim = abs(im1 - im2) < 0.01
 
         self._ax1.imshow(im1, origin='lower', interpolation='none')
         self._ax2.imshow(im2, origin='lower', interpolation='none')
         self._ax3.imshow(difim, origin='lower', interpolation='none')
         plt.draw()
 
+        im1[difim] = 1.0
+
         info = outInfo.GetInformationObject(0)
         ue = info.Get(vtk.vtkStreamingDemandDrivenPipeline.UPDATE_EXTENT())
 
         out = vtk.vtkImageData.GetData(outInfo)
-        out.DeepCopy(inp1)
         out.SetExtent(ue)
+        out.GetPointData().SetScalars(
+            numpy_support.numpy_to_vtk(im1.reshape(-1)))
 
         end = timer()
         logging.debug('Execution time {:.4f} seconds'.format(end - start))
