@@ -67,14 +67,19 @@ classifier.Update()
 """ Render objects """
 
 renWin = vtk.vtkRenderWindow()
-renWin.SetSize(640*3, 480*1)
+renWin.SetSize(640*2, 480*1)
 iren = vtk.vtkRenderWindowInteractor()
 iren.SetRenderWindow(renWin)
+
+renWinD = vtk.vtkRenderWindow()
+renWinD.SetSize(640*2, 480*1)
+irenD = vtk.vtkRenderWindowInteractor()
+irenD.SetRenderWindow(renWinD)
 
 # scenario
 renScenario = vtk.vtkRenderer()
 renScenario.SetBackground(eggshell)
-renScenario.SetViewport(0.0, 0.0, 1.0 / 3, 1.0)
+renScenario.SetViewport(0.0 / 2.0, 0.0, 1.0 / 2.0, 1.0)
 cameraActor = vtk.vtkCameraActor()
 cameraActor.SetCamera(di.get_vtk_camera())
 cameraActor.SetWidthByHeightRatio(di.get_width_by_height_ratio())
@@ -83,23 +88,37 @@ renScenario.AddActor(sourceAo.actor)
 renScenario.AddActor(surfAo.actor)
 renScenario.AddActor(meshAo.actor)
 
-# sensor output
+# surf
+renSurf = vtk.vtkRenderer()
+renSurf.SetBackground(eggshell)
+renSurf.SetViewport(1.0 / 2.0, 0.0, 2.0 / 2.0, 1.0)
+cameraActor = vtk.vtkCameraActor()
+cameraActor.SetCamera(di.get_vtk_camera())
+cameraActor.SetWidthByHeightRatio(di.get_width_by_height_ratio())
+renSurf.AddActor(cameraActor)
+renSurf.AddActor(sourceAo.actor)
+renSurf.AddActor(surfAo.actor)
+
+# sensor output D
 renSensor = vtk.vtkRenderer()
-renSensor.SetViewport(1.0 / 3, 0.0, 2.0 / 3, 1.0)
+renSensor.SetViewport(0.0 / 2.0, 0.0, 1.0 / 2.0, 1.0)
 renSensor.SetInteractive(0)
 renSensor.AddActor(diAo.actor)
 
-# simulated sensor output
+# simulated sensor output D
 renSSensor = vtk.vtkRenderer()
-renSSensor.SetViewport(2.0 / 3, 0.0, 3.0 / 3, 1.0)
+renSSensor.SetViewport(1.0 / 2.0, 0.0, 2.0 / 2.0, 1.0)
 renSSensor.SetInteractive(0)
 renSSensor.AddActor(sdiAo.actor)
 
 renWin.AddRenderer(renScenario)
-renWin.AddRenderer(renSensor)
-renWin.AddRenderer(renSSensor)
+renWin.AddRenderer(renSurf)
+
+renWinD.AddRenderer(renSensor)
+renWinD.AddRenderer(renSSensor)
 
 iren.Initialize()
+irenD.Initialize()
 
 """ Move the sensor """
 
@@ -132,6 +151,9 @@ for i, (pos, lka) in enumerate(zip(position, lookat)):
 
     print "iren.Render()"
     iren.Render()
+
+    print "irenD.Render()"
+    irenD.Render()
 
     iren.Start()
 

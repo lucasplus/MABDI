@@ -20,7 +20,7 @@ class FilterClassifier(VTKPythonAlgorithmBase):
                                         nInputPorts=2, inputType='vtkImageData',
                                         nOutputPorts=1, outputType='vtkImageData')
 
-        self._f, (self._ax1, self._ax2, self._ax3) = plt.subplots(1, 3, sharex=False, sharey=True)
+        self._f, (self._ax1, self._ax2, self._ax3, self._ax4) = plt.subplots(1, 4, sharex=False, sharey=True)
         self._f.show()
 
     def RequestInformation(self, request, inInfo, outInfo):
@@ -52,13 +52,14 @@ class FilterClassifier(VTKPythonAlgorithmBase):
         im2 = numpy_support.vtk_to_numpy(inp2.GetPointData().GetScalars()).reshape(480, 640)
 
         difim = abs(im1 - im2) < 0.01
+        imout = np.copy(im1)
+        imout[difim] = 1.0
 
         self._ax1.imshow(im1, origin='lower', interpolation='none')
         self._ax2.imshow(im2, origin='lower', interpolation='none')
-        self._ax3.imshow(difim, origin='lower', interpolation='none')
+        self._ax3.imshow(difim, origin='lower', interpolation='none', cmap='Greys_r')
+        self._ax4.imshow(imout, origin='lower', interpolation='none')
         plt.draw()
-
-        im1[difim] = 1.0
 
         info = outInfo.GetInformationObject(0)
         ue = info.Get(vtk.vtkStreamingDemandDrivenPipeline.UPDATE_EXTENT())
@@ -66,7 +67,7 @@ class FilterClassifier(VTKPythonAlgorithmBase):
         out = vtk.vtkImageData.GetData(outInfo)
         out.SetExtent(ue)
         out.GetPointData().SetScalars(
-            numpy_support.numpy_to_vtk(im1.reshape(-1)))
+            numpy_support.numpy_to_vtk(imout.reshape(-1)))
 
         end = timer()
         logging.debug('Execution time {:.4f} seconds'.format(end - start))
