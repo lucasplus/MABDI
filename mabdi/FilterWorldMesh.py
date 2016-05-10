@@ -1,6 +1,7 @@
 import vtk
 from vtk.util.vtkAlgorithm import VTKPythonAlgorithmBase
 from vtk.util import numpy_support
+from vtk.util.colors import eggshell, slate_grey_light, red, yellow, salmon
 from vtk.numpy_interface import dataset_adapter as dsa
 from vtk.numpy_interface import algorithms as alg
 
@@ -10,17 +11,28 @@ import numpy as np
 from scipy import ndimage
 import matplotlib.pyplot as plt
 
+from itertools import cycle
+
 from timeit import default_timer as timer
 import logging
 
 
 class FilterWorldMesh(VTKPythonAlgorithmBase):
-    def __init__(self):
+    def __init__(self, color=False):
         VTKPythonAlgorithmBase.__init__(self,
                                         nInputPorts=1, inputType='vtkPolyData',
                                         nOutputPorts=1, outputType='vtkPolyData')
 
+        self._color = color
+
         self._worldmesh = vtk.vtkAppendPolyData()
+
+        # colormap for changing polydata on every iteration
+        # http://matplotlib.org/examples/color/colormaps_reference.html
+        if self._color:
+            gist_rainbow_r = plt.cm.get_cmap(name='gist_rainbow_r')
+            mycm = gist_rainbow_r(range(160, 260, 5))[:, 0:3]
+            self._colorcycle = cycle(mycm)
 
     def RequestData(self, request, inInfo, outInfo):
         logging.debug('')
@@ -29,12 +41,16 @@ class FilterWorldMesh(VTKPythonAlgorithmBase):
         # input polydata
         # have to make a copy otherwise polys will not show up in the render
         # even though GetNumberOfCells() says they should be there
-        # ugly if statement is so that clear_world_mesh() works properly
-        # Has something to do with the input to FilterWorldMesh is also a
-        # function of it's output. I need to draw it out.
         tmp = vtk.vtkPolyData.GetData(inInfo[0])
         inp = vtk.vtkPolyData()
         inp.ShallowCopy(tmp)
+
+        # change color of all cells
+        if self._color:
+            ncells = inp.GetNumberOfCells()
+            c = self._colorcycle.next()
+            vtkarray = dsa.numpyTovtkDataArray(np.tile(c, (ncells, 1)))
+            inp.GetCellData().SetScalars(vtkarray)
 
         # add to world mesh
         self._worldmesh.AddInputData(inp)

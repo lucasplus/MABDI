@@ -93,12 +93,6 @@ class FilterDepthImageToSurface(VTKPythonAlgorithmBase):
                                               edges_v.reshape(-1)))
         self._world_pts[0:3, invalid_index] = np.array([[0.0], [-2.0], [0.0]])
 
-        # plt.imshow(
-        #            edges_h,
-        #            origin='lower',
-        #            interpolation='none')
-        # plt.show()
-
         """ Update and set filter output """
 
         # update vtkPoints

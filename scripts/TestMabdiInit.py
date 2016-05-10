@@ -30,9 +30,9 @@ Render Window bottom row
 source = mabdi.SourceEnvironmentTable()
 di = mabdi.FilterDepthImage(offscreen=True, name='sensor')
 sdi = mabdi.FilterDepthImage(offscreen=True, name='simulated sensor')
-classifier = mabdi.FilterClassifier()
+classifier = mabdi.FilterClassifier(visualize=True)
 surf = mabdi.FilterDepthImageToSurface()
-mesh = mabdi.FilterWorldMesh()
+mesh = mabdi.FilterWorldMesh(color=True)
 
 sourceAo = mabdi.VTKPolyDataActorObjects(source)
 sourceAo.actor.SetMapper(sourceAo.mapper)
@@ -54,14 +54,13 @@ classifier.AddInputConnection(1, sdi.GetOutputPort())
 
 surf.SetInputConnection(classifier.GetOutputPort())
 surfAo = mabdi.VTKPolyDataActorObjects(surf)
-surfAo.actor.GetProperty().SetPointSize(1.5)
 surfAo.actor.GetProperty().SetColor(red)
 surfAo.actor.GetProperty().SetOpacity(1.0)
 
 mesh.SetInputConnection(surf.GetOutputPort())
 meshAo = mabdi.VTKPolyDataActorObjects(mesh)
 meshAo.actor.GetProperty().SetColor(salmon)
-meshAo.actor.GetProperty().SetOpacity(0.2)
+meshAo.actor.GetProperty().SetOpacity(0.5)
 sdi.set_polydata(mesh)
 
 # source.Update()
@@ -157,7 +156,7 @@ for i, (pos, lka) in enumerate(zip(position, lookat)):
     print "irenD.Render()"
     irenD.Render()
 
-    #iren.Start()
+    iren.Start()
 
     end = timer()
     logging.info('END LOOP time {:.4f} seconds'.format(end - start))
