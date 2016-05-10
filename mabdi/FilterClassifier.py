@@ -66,6 +66,8 @@ class FilterClassifier(VTKPythonAlgorithmBase):
 
         out = vtk.vtkImageData.GetData(outInfo)
         out.SetExtent(ue)
+        (out.sizex, out.sizey, out.tmat, out.viewport) = \
+            (inp1.sizex, inp1.sizey, inp1.tmat, inp1.viewport)
         out.GetPointData().SetScalars(
             numpy_support.numpy_to_vtk(imout.reshape(-1)))
 

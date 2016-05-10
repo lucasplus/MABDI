@@ -28,41 +28,43 @@ Render Window bottom row
 """ Filters and sources """
 
 source = mabdi.SourceEnvironmentTable()
-source.Update()
+di = mabdi.FilterDepthImage(offscreen=True, name='sensor')
+sdi = mabdi.FilterDepthImage(offscreen=True, name='simulated sensor')
+classifier = mabdi.FilterClassifier()
+surf = mabdi.FilterDepthImageToSurface()
+mesh = mabdi.FilterWorldMesh()
+
 sourceAo = mabdi.VTKPolyDataActorObjects(source)
 sourceAo.actor.SetMapper(sourceAo.mapper)
 sourceAo.actor.GetProperty().SetColor(slate_grey_light)
 sourceAo.actor.GetProperty().SetOpacity(0.2)
 
-di = mabdi.FilterDepthImage(offscreen=True, name='sensor')
 di.set_polydata(source)
 diAo = mabdi.VTKImageActorObjects(di)
 diAo.mapper.SetColorWindow(1.0)
 diAo.mapper.SetColorLevel(0.5)
 
-surf = mabdi.FilterDepthImageToSurface()
-surf.SetInputConnection(di.GetOutputPort())
+sdi.set_polydata_empty()  # because the world mesh hasn't been initialized yet
+sdiAo = mabdi.VTKImageActorObjects(sdi)
+sdiAo.mapper.SetColorWindow(1.0)
+sdiAo.mapper.SetColorLevel(0.5)
+
+classifier.AddInputConnection(0, di.GetOutputPort())
+classifier.AddInputConnection(1, sdi.GetOutputPort())
+
+surf.SetInputConnection(classifier.GetOutputPort())
 surfAo = mabdi.VTKPolyDataActorObjects(surf)
 surfAo.actor.GetProperty().SetPointSize(1.5)
 surfAo.actor.GetProperty().SetColor(red)
 surfAo.actor.GetProperty().SetOpacity(1.0)
 
-mesh = mabdi.FilterWorldMesh()
 mesh.SetInputConnection(surf.GetOutputPort())
 meshAo = mabdi.VTKPolyDataActorObjects(mesh)
 meshAo.actor.GetProperty().SetColor(salmon)
 meshAo.actor.GetProperty().SetOpacity(0.2)
-
-sdi = mabdi.FilterDepthImage(offscreen=False, name='simulated sensor')
 sdi.set_polydata(mesh)
-sdiAo = mabdi.VTKImageActorObjects(sdi)
-sdiAo.mapper.SetColorWindow(1.0)
-sdiAo.mapper.SetColorLevel(0.5)
 
-classifier = mabdi.FilterClassifier()
-classifier.AddInputConnection(0, di.GetOutputPort())
-classifier.AddInputConnection(1, sdi.GetOutputPort())
-classifier.Update()
+# source.Update()
 
 """ Render objects """
 
@@ -122,7 +124,7 @@ irenD.Initialize()
 
 """ Move the sensor """
 
-rang = np.arange(-40, 41, 2, dtype=float)
+rang = np.arange(-40, 41, 5, dtype=float)
 position = np.vstack((rang/20,
                       np.ones(len(rang)),
                       np.ones(len(rang))*2)).T
@@ -155,8 +157,10 @@ for i, (pos, lka) in enumerate(zip(position, lookat)):
     print "irenD.Render()"
     irenD.Render()
 
-    iren.Start()
+    #iren.Start()
 
     end = timer()
     logging.info('END LOOP time {:.4f} seconds'.format(end - start))
 
+iren.GetRenderWindow().Finalize()
+irenD.GetRenderWindow().Finalize()

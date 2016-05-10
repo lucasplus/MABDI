@@ -57,13 +57,32 @@ class FilterDepthImage(VTKPythonAlgorithmBase):
 
     def set_polydata(self, in_polydata):
         """
-        User must specify the environment that this filter will use
-        :param in_polydata: vtkPolyData that defines the environment
+        What this filter will render and consequently produce a depth image of.
+        :param in_polydata: vtkAlgorithm that produces a vtkPolyData
         """
         logging.debug('')
 
         mapper = vtk.vtkPolyDataMapper()
         mapper.SetInputConnection(in_polydata.GetOutputPort())
+
+        actor = vtk.vtkActor()
+        actor.SetMapper(mapper)
+
+        self._ren.AddActor(actor)
+
+        self._iren.Initialize()
+        self._iren.Render()
+
+    def set_polydata_empty(self):
+        """
+        Use to initialize this filter with an empty vtkPolyData
+        """
+        logging.debug('')
+
+        polydata = vtk.vtkPolyData()
+
+        mapper = vtk.vtkPolyDataMapper()
+        mapper.SetInputDataObject(polydata)
 
         actor = vtk.vtkActor()
         actor.SetMapper(mapper)
