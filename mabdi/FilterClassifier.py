@@ -1,5 +1,3 @@
-import sys
-
 import vtk
 from vtk.util.vtkAlgorithm import VTKPythonAlgorithmBase
 from vtk.util import numpy_support
@@ -7,7 +5,6 @@ from vtk.numpy_interface import dataset_adapter as dsa
 from vtk.numpy_interface import algorithms as alg
 
 import numpy as np
-from scipy import ndimage
 import matplotlib.pyplot as plt
 
 from timeit import default_timer as timer
@@ -47,13 +44,17 @@ class FilterClassifier(VTKPythonAlgorithmBase):
         logging.debug('')
         start = timer()
 
-        # in images
+        # in images (vtkImageData)
         inp1 = vtk.vtkImageData.GetData(inInfo[0])
         inp2 = vtk.vtkImageData.GetData(inInfo[1])
+
+        # convert to numpy arrays
+        dim = inp1.GetDimensions()
         im1 = numpy_support.vtk_to_numpy(inp1.GetPointData().GetScalars())\
-            .reshape(inp1.sizey, inp1.sizex)
+            .reshape((dim[1], dim[0]))
+        dim = inp1.GetDimensions()
         im2 = numpy_support.vtk_to_numpy(inp2.GetPointData().GetScalars())\
-            .reshape(inp2.sizey, inp2.sizex)
+            .reshape((dim[1], dim[0]))
 
         # difference in the images
         # im1 is assumed to be from the actual sensor

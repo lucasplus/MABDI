@@ -7,6 +7,7 @@ from vtk.numpy_interface import algorithms as alg
 import mabdi
 
 import numpy as np
+import matplotlib.pyplot as plt
 
 from timeit import default_timer as timer
 import logging
@@ -30,7 +31,7 @@ Render Window bottom row
 source = mabdi.SourceEnvironmentTable()
 di = mabdi.FilterDepthImage(offscreen=True, name='sensor')
 sdi = mabdi.FilterDepthImage(offscreen=True, name='simulated sensor')
-classifier = mabdi.FilterClassifier(visualize=True)
+classifier = mabdi.FilterClassifier(visualize=False)
 surf = mabdi.FilterDepthImageToSurface()
 mesh = mabdi.FilterWorldMesh(color=True)
 
@@ -63,8 +64,6 @@ meshAo.actor.GetProperty().SetColor(salmon)
 meshAo.actor.GetProperty().SetOpacity(0.5)
 sdi.set_polydata(mesh)
 
-# source.Update()
-
 """ Render objects """
 
 renWin = vtk.vtkRenderWindow()
@@ -88,6 +87,8 @@ renScenario.AddActor(cameraActor)
 renScenario.AddActor(sourceAo.actor)
 renScenario.AddActor(surfAo.actor)
 renScenario.AddActor(meshAo.actor)
+renScenario.GetActiveCamera().SetPosition(2.0, 7.0, 8.0)
+renScenario.GetActiveCamera().SetFocalPoint(0.0, 1.0, 0.0)
 
 # surf
 renSurf = vtk.vtkRenderer()
@@ -99,6 +100,8 @@ cameraActor.SetWidthByHeightRatio(di.get_width_by_height_ratio())
 renSurf.AddActor(cameraActor)
 renSurf.AddActor(sourceAo.actor)
 renSurf.AddActor(surfAo.actor)
+renSurf.GetActiveCamera().SetPosition(2.0, 7.0, 8.0)
+renSurf.GetActiveCamera().SetFocalPoint(0.0, 1.0, 0.0)
 
 # sensor output D
 renSensor = vtk.vtkRenderer()
@@ -121,15 +124,27 @@ renWinD.AddRenderer(renSSensor)
 iren.Initialize()
 irenD.Initialize()
 
+""" Capture render window """
+
+# window_to_image = vtk.vtkWindowToImageFilter()
+# window_to_image.SetInput(renWin)
+#
+# fig = plt.figure()
+# fig.show()
+
 """ Move the sensor """
 
-rang = np.arange(-40, 41, 5, dtype=float)
-position = np.vstack((rang/20,
+rang = np.arange(-40, 41, 10, dtype=float)
+position = np.vstack((rang/10,
                       np.ones(len(rang)),
-                      np.ones(len(rang))*2)).T
-lookat = np.vstack((rang/40,
+                      np.ones(len(rang))*1.5)).T
+lookat = np.vstack((rang/15,
                     np.ones(len(rang))*.5,
                     np.zeros(len(rang)))).T
+
+iren.Start()
+
+gm = mabdi.VTKWindowToMovie(renWin)
 
 for i, (pos, lka) in enumerate(zip(position, lookat)):
     logging.info('START LOOP')
@@ -156,10 +171,21 @@ for i, (pos, lka) in enumerate(zip(position, lookat)):
     print "irenD.Render()"
     irenD.Render()
 
-    iren.Start()
+    print "gm.grab_frame()"
+    gm.grab_frame()
+
+    # iren.Start()
+
+    # window_to_image.Update()
+    # inp = window_to_image.GetOutput()
+    # im = numpy_support.vtk_to_numpy(inp.GetPointData().GetScalars()).reshape(480*1, 640*2, 3)
+    # plt.imshow(im, origin='lower', interpolation='none')
+    # plt.draw()
 
     end = timer()
     logging.info('END LOOP time {:.4f} seconds'.format(end - start))
 
 iren.GetRenderWindow().Finalize()
 irenD.GetRenderWindow().Finalize()
+
+gm.save()

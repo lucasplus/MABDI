@@ -23,12 +23,11 @@ class FilterWorldMesh(VTKPythonAlgorithmBase):
                                         nInputPorts=1, inputType='vtkPolyData',
                                         nOutputPorts=1, outputType='vtkPolyData')
 
-        self._color = color
-
         self._worldmesh = vtk.vtkAppendPolyData()
 
         # colormap for changing polydata on every iteration
         # http://matplotlib.org/examples/color/colormaps_reference.html
+        self._color = color
         if self._color:
             gist_rainbow_r = plt.cm.get_cmap(name='gist_rainbow_r')
             mycm = gist_rainbow_r(range(160, 260, 5))[:, 0:3]
