@@ -12,6 +12,12 @@ import logging
 
 
 class FilterDepthImage(VTKPythonAlgorithmBase):
+    """
+    Create a depth image of a scene
+
+    Given the geometric information of the scene (vtkPolyData) and the
+    orientation of the depth sensor.
+    """
     def __init__(self, offscreen=False, noise=False, name='none'):
         VTKPythonAlgorithmBase.__init__(self,
                                         nInputPorts=0,
@@ -60,7 +66,7 @@ class FilterDepthImage(VTKPythonAlgorithmBase):
         What this filter will render and consequently produce a depth image of.
         :param in_polydata: vtkAlgorithm that produces a vtkPolyData
         """
-        logging.debug('')
+        logging.info('')
 
         mapper = vtk.vtkPolyDataMapper()
         mapper.SetInputConnection(in_polydata.GetOutputPort())
@@ -77,7 +83,7 @@ class FilterDepthImage(VTKPythonAlgorithmBase):
         """
         Use to initialize this filter with an empty vtkPolyData
         """
-        logging.debug('')
+        logging.info('')
 
         polydata = vtk.vtkPolyData()
 
@@ -109,8 +115,18 @@ class FilterDepthImage(VTKPythonAlgorithmBase):
     def get_width_by_height_ratio(self):
         return float(self._renWin.GetSize()[0]) / float(self._renWin.GetSize()[1])
 
+    def kill_render_window(self):
+        """
+        Kill render window that this instance owns. Only to be used when the user
+        is sure the filter will not be run again.
+        """
+        # http://stackoverflow.com/questions/15639762/close-vtk-window-python
+        self._renWin.Finalize()
+        self._iren.TerminateApp()
+        del self._renWin, self._iren
+
     def RequestInformation(self, request, inInfo, outInfo):
-        logging.debug('')
+        logging.info('')
         size = self._renWin.GetSize()
         extent = (0, size[0] - 1, 0, size[1] - 1, 0, 0)
         info = outInfo.GetInformationObject(0)
@@ -119,7 +135,7 @@ class FilterDepthImage(VTKPythonAlgorithmBase):
         return 1
 
     def RequestData(self, request, inInfo, outInfo):
-        logging.debug('{}'.format(self._name))
+        logging.info('{}'.format(self._name))
         start = timer()
 
         # get the depth values
@@ -151,7 +167,7 @@ class FilterDepthImage(VTKPythonAlgorithmBase):
         out.tmat = self._vtkmatrix_to_numpy(vtktmat)
 
         end = timer()
-        logging.debug('Execution time {:.4f} seconds'.format(end - start))
+        logging.info('Execution time {:.4f} seconds'.format(end - start))
 
         return 1
 

@@ -9,10 +9,10 @@ from timeit import default_timer as timer
 
 
 class SourceEnvironmentTable(VTKPythonAlgorithmBase):
-    """Custom vtk filter for creating and controlling an environment called table
+    """
+    Custom vtk filter for creating and controlling an environment called "table"
 
-    An environment consists of objects. The table environment consists of a
-    floor, table, and 2 cups.
+    The table environment consists of a floor, table, and 2 cups.
     """
 
     def __init__(self):

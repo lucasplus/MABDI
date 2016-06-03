@@ -33,10 +33,9 @@ di = mabdi.FilterDepthImage(offscreen=True, name='sensor')
 sdi = mabdi.FilterDepthImage(offscreen=True, name='simulated sensor')
 classifier = mabdi.FilterClassifier(visualize=False)
 surf = mabdi.FilterDepthImageToSurface()
-mesh = mabdi.FilterWorldMesh(color=True)
+mesh = mabdi.FilterWorldMesh(color=False)
 
 sourceAo = mabdi.VTKPolyDataActorObjects(source)
-sourceAo.actor.SetMapper(sourceAo.mapper)
 sourceAo.actor.GetProperty().SetColor(slate_grey_light)
 sourceAo.actor.GetProperty().SetOpacity(0.2)
 
@@ -124,17 +123,9 @@ renWinD.AddRenderer(renSSensor)
 iren.Initialize()
 irenD.Initialize()
 
-""" Capture render window """
-
-# window_to_image = vtk.vtkWindowToImageFilter()
-# window_to_image.SetInput(renWin)
-#
-# fig = plt.figure()
-# fig.show()
-
 """ Move the sensor """
 
-rang = np.arange(-40, 41, 10, dtype=float)
+rang = np.arange(-40, 41, 5, dtype=float)
 position = np.vstack((rang/10,
                       np.ones(len(rang)),
                       np.ones(len(rang))*1.5)).T
@@ -144,7 +135,7 @@ lookat = np.vstack((rang/15,
 
 iren.Start()
 
-gm = mabdi.VTKWindowToMovie(renWin)
+# wtm = mabdi.VTKWindowToMovie(renWin)
 
 for i, (pos, lka) in enumerate(zip(position, lookat)):
     logging.info('START LOOP')
@@ -172,20 +163,25 @@ for i, (pos, lka) in enumerate(zip(position, lookat)):
     irenD.Render()
 
     print "gm.grab_frame()"
-    gm.grab_frame()
+    # wtm.grab_frame()
 
     # iren.Start()
-
-    # window_to_image.Update()
-    # inp = window_to_image.GetOutput()
-    # im = numpy_support.vtk_to_numpy(inp.GetPointData().GetScalars()).reshape(480*1, 640*2, 3)
-    # plt.imshow(im, origin='lower', interpolation='none')
-    # plt.draw()
 
     end = timer()
     logging.info('END LOOP time {:.4f} seconds'.format(end - start))
 
+# wtm.save()
+
+""" Exit gracefully """
+
+di.kill_render_window()
+sdi.kill_render_window()
+
 iren.GetRenderWindow().Finalize()
 irenD.GetRenderWindow().Finalize()
+iren.TerminateApp()
+irenD.TerminateApp()
 
-gm.save()
+del renWin, renWinD, iren, irenD
+
+

@@ -73,7 +73,7 @@ class VTKWindowToMovie(object):
         ffmpegwriter = animation.writers['ffmpeg']
         metadata = dict(title='Movie Test', artist='Matplotlib',
                         comment='Movie support!')
-        self._writer = ffmpegwriter(fps=2, metadata=metadata)
+        self._writer = ffmpegwriter(fps=1, metadata=metadata)
 
     def grab_frame(self):
         logging.debug('')
@@ -95,11 +95,14 @@ class VTKWindowToMovie(object):
 
     def save(self):
         # http://matplotlib.org/examples/animation/moviewriter.html
-        fig = plt.figure()
+        fig = plt.figure(figsize=(16, 6), dpi=100)
         with self._writer.saving(fig, "writer_test.mp4", 100):
             for i, im in enumerate(self._ims):
-                logging.info('VTKWindowToMovie {} of {}'.format(i, len(self._ims)))
+                logging.info('VTKWindowToMovie {} of {}'.format(i+1, len(self._ims)))
                 plt.imshow(im, origin='lower', interpolation='none')
+                plt.axis('off')
                 self._writer.grab_frame()
+        print fig.dpi
+        print fig.get_size_inches()*fig.dpi
 
 
