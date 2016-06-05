@@ -34,33 +34,40 @@ class MabdiSimulate(object):
         self.surf = mabdi.FilterDepthImageToSurface()
         self.mesh = mabdi.FilterWorldMesh(color=False)
 
-        sourceAo = mabdi.VTKPolyDataActorObjects(self.source)
-        sourceAo.actor.GetProperty().SetColor(slate_grey_light)
-        sourceAo.actor.GetProperty().SetOpacity(0.2)
-
         self.di.set_polydata(self.source)
-        diAo = mabdi.VTKImageActorObjects(self.di)
-        diAo.mapper.SetColorWindow(1.0)
-        diAo.mapper.SetColorLevel(0.5)
 
         self.sdi.set_polydata_empty()  # because the world mesh hasn't been initialized yet
-        sdiAo = mabdi.VTKImageActorObjects(self.sdi)
-        sdiAo.mapper.SetColorWindow(1.0)
-        sdiAo.mapper.SetColorLevel(0.5)
 
         self.classifier.AddInputConnection(0, self.di.GetOutputPort())
         self.classifier.AddInputConnection(1, self.sdi.GetOutputPort())
 
         self.surf.SetInputConnection(self.classifier.GetOutputPort())
+
+        self.mesh.SetInputConnection(self.surf.GetOutputPort())
+
+        self.sdi.set_polydata(self.mesh)
+
+        """ Actor objects """
+
+        sourceAo = mabdi.VTKPolyDataActorObjects(self.source)
+        sourceAo.actor.GetProperty().SetColor(slate_grey_light)
+        sourceAo.actor.GetProperty().SetOpacity(0.2)
+
+        diAo = mabdi.VTKImageActorObjects(self.di)
+        diAo.mapper.SetColorWindow(1.0)
+        diAo.mapper.SetColorLevel(0.5)
+
+        sdiAo = mabdi.VTKImageActorObjects(self.sdi)
+        sdiAo.mapper.SetColorWindow(1.0)
+        sdiAo.mapper.SetColorLevel(0.5)
+
         surfAo = mabdi.VTKPolyDataActorObjects(self.surf)
         surfAo.actor.GetProperty().SetColor(red)
         surfAo.actor.GetProperty().SetOpacity(1.0)
 
-        self.mesh.SetInputConnection(self.surf.GetOutputPort())
         meshAo = mabdi.VTKPolyDataActorObjects(self.mesh)
         meshAo.actor.GetProperty().SetColor(salmon)
         meshAo.actor.GetProperty().SetOpacity(0.5)
-        self.sdi.set_polydata(self.mesh)
 
         """ Render objects """
 
@@ -164,7 +171,7 @@ class MabdiSimulate(object):
             logging.debug('irenD.Render()')
             self.irenD.Render()
 
-            logging.debug('gm.grab_frame()')
+            # logging.debug('wtm.grab_frame()')
             # wtm.grab_frame()
 
             # iren.Start()

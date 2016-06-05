@@ -30,7 +30,7 @@ class SourceEnvironmentTable(VTKPythonAlgorithmBase):
         self._right_cup_flag = True
 
     def RequestData(self, request, inInfo, outInfo):
-        logging.debug('')
+        logging.info('')
         start = timer()
 
         append = vtk.vtkAppendPolyData()
@@ -103,7 +103,7 @@ class SourceEnvironmentTable(VTKPythonAlgorithmBase):
         output.ShallowCopy(append.GetOutput())
 
         end = timer()
-        logging.debug('Execution time {:.4f} seconds'.format(end - start))
+        logging.info('Execution time {:.4f} seconds'.format(end - start))
 
         return 1
 

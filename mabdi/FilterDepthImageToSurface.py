@@ -43,7 +43,7 @@ class FilterDepthImageToSurface(VTKPythonAlgorithmBase):
         self._extract.SetImplicitFunction(planefunc)
 
     def RequestData(self, request, inInfo, outInfo):
-        logging.debug('')
+        logging.info('')
         start = timer()
 
         # input (vtkImageData)
@@ -106,12 +106,12 @@ class FilterDepthImageToSurface(VTKPythonAlgorithmBase):
         out.ShallowCopy(self._extract.GetOutput())
 
         end = timer()
-        logging.debug('Execution time {:.4f} seconds'.format(end - start))
+        logging.info('Execution time {:.4f} seconds'.format(end - start))
 
         return 1
 
     def _init_containers(self):
-        logging.debug('Initializing arrays for projection calculation.')
+        logging.info('Initializing arrays for projection calculation.')
         tstart = timer()
 
         # helper variables (width, height)
@@ -163,7 +163,7 @@ class FilterDepthImageToSurface(VTKPythonAlgorithmBase):
 
         # time me
         tend = timer()
-        logging.debug('Initializing arrays for projection calculation {:.4f} seconds'.format(tend - tstart))
+        logging.info('Initializing arrays for projection calculation {:.4f} seconds'.format(tend - tstart))
 
 """
 # show me

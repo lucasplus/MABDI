@@ -34,7 +34,7 @@ class FilterWorldMesh(VTKPythonAlgorithmBase):
             self._colorcycle = cycle(mycm)
 
     def RequestData(self, request, inInfo, outInfo):
-        logging.debug('')
+        logging.info('')
         start = timer()
 
         # input polydata
@@ -64,6 +64,6 @@ class FilterWorldMesh(VTKPythonAlgorithmBase):
         out.ShallowCopy(self._worldmesh.GetOutput())
 
         end = timer()
-        logging.debug('Execution time {:.4f} seconds'.format(end - start))
+        logging.info('Execution time {:.4f} seconds'.format(end - start))
 
         return 1

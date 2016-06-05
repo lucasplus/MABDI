@@ -23,7 +23,7 @@ class FilterClassifier(VTKPythonAlgorithmBase):
             self._f.show()
 
     def RequestInformation(self, request, inInfo, outInfo):
-        logging.debug('')
+        logging.info('')
 
         # input images dimensions
         info = inInfo[0].GetInformationObject(0)
@@ -41,7 +41,7 @@ class FilterClassifier(VTKPythonAlgorithmBase):
         return 1
 
     def RequestData(self, request, inInfo, outInfo):
-        logging.debug('')
+        logging.info('')
         start = timer()
 
         # in images (vtkImageData)
@@ -87,6 +87,6 @@ class FilterClassifier(VTKPythonAlgorithmBase):
             numpy_support.numpy_to_vtk(imout.reshape(-1)))
 
         end = timer()
-        logging.debug('Execution time {:.4f} seconds'.format(end - start))
+        logging.info('Execution time {:.4f} seconds'.format(end - start))
 
         return 1
