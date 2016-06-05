@@ -1,6 +1,6 @@
 
 import vtk
-from vtk.util.colors import eggshell, slate_grey_light, red, yellow, salmon
+from vtk.util.colors import eggshell, slate_grey_light, red, yellow, salmon, blue, hot_pink
 from vtk.util import numpy_support
 from vtk.numpy_interface import dataset_adapter as dsa
 from vtk.numpy_interface import algorithms as alg
@@ -24,6 +24,16 @@ class MabdiSimulate(object):
         """
         Initialize all the vtkPythonAlgorithms that make up MABDI
         """
+
+        """ Sensor path """
+
+        rang = np.arange(-40, 41, 5, dtype=float)
+        self.position = np.vstack((rang/10,
+                              np.ones(len(rang)),
+                              np.ones(len(rang))*1.5)).T
+        self.lookat = np.vstack((rang/15,
+                            np.ones(len(rang))*.5,
+                            np.zeros(len(rang)))).T
 
         """ Filters and sources """
 
@@ -53,14 +63,6 @@ class MabdiSimulate(object):
         sourceAo.actor.GetProperty().SetColor(slate_grey_light)
         sourceAo.actor.GetProperty().SetOpacity(0.2)
 
-        diAo = mabdi.VTKImageActorObjects(self.di)
-        diAo.mapper.SetColorWindow(1.0)
-        diAo.mapper.SetColorLevel(0.5)
-
-        sdiAo = mabdi.VTKImageActorObjects(self.sdi)
-        sdiAo.mapper.SetColorWindow(1.0)
-        sdiAo.mapper.SetColorLevel(0.5)
-
         surfAo = mabdi.VTKPolyDataActorObjects(self.surf)
         surfAo.actor.GetProperty().SetColor(red)
         surfAo.actor.GetProperty().SetOpacity(1.0)
@@ -76,19 +78,11 @@ class MabdiSimulate(object):
         self.iren = vtk.vtkRenderWindowInteractor()
         self.iren.SetRenderWindow(self.renWin)
 
-        self.renWinD = vtk.vtkRenderWindow()
-        self.renWinD.SetSize(640*2, 480*1)
-        self.irenD = vtk.vtkRenderWindowInteractor()
-        self.irenD.SetRenderWindow(self.renWinD)
-
         # scenario
         renScenario = vtk.vtkRenderer()
         renScenario.SetBackground(eggshell)
         renScenario.SetViewport(0.0 / 2.0, 0.0, 1.0 / 2.0, 1.0)
-        cameraActor = vtk.vtkCameraActor()
-        cameraActor.SetCamera(self.di.get_vtk_camera())
-        cameraActor.SetWidthByHeightRatio(self.di.get_width_by_height_ratio())
-        renScenario.AddActor(cameraActor)
+        self._add_sensor_visualization(renScenario)
         renScenario.AddActor(sourceAo.actor)
         renScenario.AddActor(surfAo.actor)
         renScenario.AddActor(meshAo.actor)
@@ -99,54 +93,89 @@ class MabdiSimulate(object):
         renSurf = vtk.vtkRenderer()
         renSurf.SetBackground(eggshell)
         renSurf.SetViewport(1.0 / 2.0, 0.0, 2.0 / 2.0, 1.0)
-        cameraActor = vtk.vtkCameraActor()
-        cameraActor.SetCamera(self.di.get_vtk_camera())
-        cameraActor.SetWidthByHeightRatio(self.di.get_width_by_height_ratio())
-        renSurf.AddActor(cameraActor)
+        self._add_sensor_visualization(renSurf)
         renSurf.AddActor(sourceAo.actor)
         renSurf.AddActor(surfAo.actor)
         renSurf.GetActiveCamera().SetPosition(2.0, 7.0, 8.0)
         renSurf.GetActiveCamera().SetFocalPoint(0.0, 1.0, 0.0)
 
-        # sensor out
-        renSensor = vtk.vtkRenderer()
-        renSensor.SetViewport(0.0 / 2.0, 0.0, 1.0 / 2.0, 1.0)
-        renSensor.SetInteractive(0)
-        renSensor.AddActor(diAo.actor)
-
-        # simulated sensor output D
-        renSSensor = vtk.vtkRenderer()
-        renSSensor.SetViewport(1.0 / 2.0, 0.0, 2.0 / 2.0, 1.0)
-        renSSensor.SetInteractive(0)
-        renSSensor.AddActor(sdiAo.actor)
-
         self.renWin.AddRenderer(renScenario)
         self.renWin.AddRenderer(renSurf)
 
-        self.renWinD.AddRenderer(renSensor)
-        self.renWinD.AddRenderer(renSSensor)
-
         self.iren.Initialize()
-        self.irenD.Initialize()
 
         return
 
+    def _add_sensor_visualization(self, vtk_renderer):
+        """
+        Add visualization specific to the sensor
+        :param vtk_renderer: The vtkRenderer where the actors will be added.
+        """
+
+        """ Frustum of the sensor """
+
+        cameraActor = vtk.vtkCameraActor()
+        cameraActor.SetCamera(self.di.get_vtk_camera())
+        cameraActor.SetWidthByHeightRatio(self.di.get_width_by_height_ratio())
+        cameraActor.GetProperty().SetColor(blue)
+
+        """ Path of the sensor """
+
+        npts = self.position.shape[0]
+
+        points = vtk.vtkPoints()
+        points.SetNumberOfPoints(npts)
+        lines = vtk.vtkCellArray()
+        lines.InsertNextCell(npts)
+        for i, pos in enumerate(self.position):
+            points.SetPoint(i, pos)
+            lines.InsertCellPoint(i)
+
+        polydata = vtk.vtkPolyData()
+        polydata.SetPoints(points)
+        polydata.SetLines(lines)
+
+        polymapper = vtk.vtkPolyDataMapper()
+        polymapper.SetInputData(polydata)
+        polymapper.Update()
+
+        actor = vtk.vtkActor()
+        actor.SetMapper(polymapper)
+        actor.GetProperty().SetColor(blue)
+        actor.GetProperty().SetOpacity(0.5)
+
+        ball = vtk.vtkSphereSource()
+        ball.SetRadius(0.02)
+        ball.SetThetaResolution(12)
+        ball.SetPhiResolution(12)
+        balls = vtk.vtkGlyph3D()
+        balls.SetInputData(polydata)
+        balls.SetSourceConnection(ball.GetOutputPort())
+        mapBalls = vtk.vtkPolyDataMapper()
+        mapBalls.SetInputConnection(balls.GetOutputPort())
+        spcActor = vtk.vtkActor()
+        spcActor.SetMapper(mapBalls)
+        spcActor.GetProperty().SetColor(hot_pink)
+        spcActor.GetProperty().SetSpecularColor(1, 1, 1)
+        spcActor.GetProperty().SetSpecular(0.3)
+        spcActor.GetProperty().SetSpecularPower(20)
+        spcActor.GetProperty().SetAmbient(0.2)
+        spcActor.GetProperty().SetDiffuse(0.8)
+
+        """ Add to the given renderer """
+
+        vtk_renderer.AddActor(spcActor)
+        vtk_renderer.AddActor(cameraActor)
+        vtk_renderer.AddActor(actor)
+
     def run(self):
         logging.info('running simulation')
-
-        rang = np.arange(-40, 41, 5, dtype=float)
-        position = np.vstack((rang/10,
-                              np.ones(len(rang)),
-                              np.ones(len(rang))*1.5)).T
-        lookat = np.vstack((rang/15,
-                            np.ones(len(rang))*.5,
-                            np.zeros(len(rang)))).T
 
         self.iren.Start()
 
         # wtm = mabdi.VTKWindowToMovie(renWin)
 
-        for i, (pos, lka) in enumerate(zip(position, lookat)):
+        for i, (pos, lka) in enumerate(zip(self.position, self.lookat)):
             logging.debug('START LOOP')
             start = timer()
 
@@ -168,9 +197,6 @@ class MabdiSimulate(object):
             logging.debug('iren.Render()')
             self.iren.Render()
 
-            logging.debug('irenD.Render()')
-            self.irenD.Render()
-
             # logging.debug('wtm.grab_frame()')
             # wtm.grab_frame()
 
@@ -187,9 +213,7 @@ class MabdiSimulate(object):
         self.sdi.kill_render_window()
 
         self.iren.GetRenderWindow().Finalize()
-        self.irenD.GetRenderWindow().Finalize()
         self.iren.TerminateApp()
-        self.irenD.TerminateApp()
 
-        del self.renWin, self.renWinD, self.iren, self.irenD
+        del self.renWin, self.iren
 
