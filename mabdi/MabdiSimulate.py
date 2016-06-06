@@ -1,4 +1,3 @@
-
 import vtk
 from vtk.util.colors import eggshell, slate_grey_light, red, yellow, salmon, blue, hot_pink
 from vtk.util import numpy_support
@@ -20,6 +19,7 @@ class MabdiSimulate(object):
 
     Flags for describing the environment, path, and visualization
     """
+
     def __init__(self):
         """
         Initialize all the vtkPythonAlgorithms that make up MABDI
@@ -27,22 +27,16 @@ class MabdiSimulate(object):
 
         """ Sensor path """
 
-        rang = np.arange(-40, 41, 5, dtype=float)
-        self.position = np.vstack((rang/10,
-                              np.ones(len(rang)),
-                              np.ones(len(rang))*1.5)).T
-        self.lookat = np.vstack((rang/15,
-                            np.ones(len(rang))*.5,
-                            np.zeros(len(rang)))).T
+        self.position, self.lookat = self._create_sensor_path('line')
 
-        """ Filters and sources """
+        """ Filters and sources (this block is basically the core of MABDI) """
 
         self.source = mabdi.SourceEnvironmentTable()
         self.di = mabdi.FilterDepthImage(offscreen=True, name='sensor')
         self.sdi = mabdi.FilterDepthImage(offscreen=True, name='simulated sensor')
         self.classifier = mabdi.FilterClassifier(visualize=False)
         self.surf = mabdi.FilterDepthImageToSurface()
-        self.mesh = mabdi.FilterWorldMesh(color=False)
+        self.mesh = mabdi.FilterWorldMesh(color=True)
 
         self.di.set_polydata(self.source)
 
@@ -74,7 +68,7 @@ class MabdiSimulate(object):
         """ Render objects """
 
         self.renWin = vtk.vtkRenderWindow()
-        self.renWin.SetSize(640*2, 480*1)
+        self.renWin.SetSize(640 * 2, 480 * 1)
         self.iren = vtk.vtkRenderWindowInteractor()
         self.iren.SetRenderWindow(self.renWin)
 
@@ -105,6 +99,33 @@ class MabdiSimulate(object):
         self.iren.Initialize()
 
         return
+
+    def _create_sensor_path(self, path_name=None):
+        if not path_name:
+            logging.warning('Path name not specified. Defaulting to line')
+            path_name == 'line'
+
+        if path_name == 'line':
+            rang = np.linspace(0, 1, num=50)
+            length = 3
+            position = np.vstack((length*(2*rang-1),
+                                  np.ones(len(rang)),
+                                  1.5*np.ones(len(rang)))).T
+            lookat = np.vstack((length*(2*rang-1),
+                                .5 * np.ones(len(rang)),
+                                np.zeros(len(rang)))).T
+        elif path_name == 'circle':
+            rang = np.linspace(0, 1, num=50)
+            radius = 3
+            nspins = 2
+            position = np.vstack((radius * np.sin(rang*np.pi*2*nspins),
+                                  np.ones(len(rang)),
+                                  radius * np.cos(rang*np.pi*2*nspins))).T
+            lookat = np.vstack((np.zeros(len(rang)),
+                                np.ones(len(rang)) * .5,
+                                np.zeros(len(rang)))).T
+
+        return position, lookat
 
     def _add_sensor_visualization(self, vtk_renderer):
         """
@@ -176,7 +197,7 @@ class MabdiSimulate(object):
         # wtm = mabdi.VTKWindowToMovie(renWin)
 
         for i, (pos, lka) in enumerate(zip(self.position, self.lookat)):
-            logging.debug('START LOOP')
+            logging.debug('START MAIN LOOP')
             start = timer()
 
             self.di.set_sensor_orientation(pos, lka)
@@ -203,7 +224,7 @@ class MabdiSimulate(object):
             # iren.Start()
 
             end = timer()
-            logging.debug('END LOOP time {:.4f} seconds'.format(end - start))
+            logging.debug('END MAIN LOOP time {:.4f} seconds'.format(end - start))
 
         # wtm.save()
 
@@ -216,4 +237,3 @@ class MabdiSimulate(object):
         self.iren.TerminateApp()
 
         del self.renWin, self.iren
-
