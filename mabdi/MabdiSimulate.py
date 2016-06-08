@@ -34,7 +34,7 @@ class MabdiSimulate(object):
         self.source = mabdi.SourceEnvironmentTable()
         self.di = mabdi.FilterDepthImage(offscreen=True, name='sensor')
         self.sdi = mabdi.FilterDepthImage(offscreen=True, name='simulated sensor')
-        self.classifier = mabdi.FilterClassifier(visualize=False)
+        self.classifier = mabdi.FilterClassifier()
         self.surf = mabdi.FilterDepthImageToSurface()
         self.mesh = mabdi.FilterWorldMesh(color=True)
 
@@ -106,7 +106,7 @@ class MabdiSimulate(object):
             path_name == 'line'
 
         if path_name == 'line':
-            rang = np.linspace(0, 1, num=50)
+            rang = np.linspace(0, 1, num=20)
             length = 3
             position = np.vstack((length*(2*rang-1),
                                   np.ones(len(rang)),
@@ -115,7 +115,7 @@ class MabdiSimulate(object):
                                 .5 * np.ones(len(rang)),
                                 np.zeros(len(rang)))).T
         elif path_name == 'circle':
-            rang = np.linspace(0, 1, num=50)
+            rang = np.linspace(0, 1, num=20)
             radius = 3
             nspins = 2
             position = np.vstack((radius * np.sin(rang*np.pi*2*nspins),
@@ -194,7 +194,8 @@ class MabdiSimulate(object):
 
         self.iren.Start()
 
-        # wtm = mabdi.VTKWindowToMovie(renWin)
+        pp = mabdi.PostProcess(self.renWin)
+        pp.register_filter_classifier(self.classifier)
 
         for i, (pos, lka) in enumerate(zip(self.position, self.lookat)):
             logging.debug('START MAIN LOOP')
@@ -219,14 +220,14 @@ class MabdiSimulate(object):
             self.iren.Render()
 
             # logging.debug('wtm.grab_frame()')
-            # wtm.grab_frame()
+            pp.collect_info()
 
-            # iren.Start()
+            #self.iren.Start()
 
             end = timer()
             logging.debug('END MAIN LOOP time {:.4f} seconds'.format(end - start))
 
-        # wtm.save()
+        pp.save()
 
         """ Exit gracefully """
 

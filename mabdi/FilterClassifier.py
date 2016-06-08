@@ -12,15 +12,21 @@ import logging
 
 
 class FilterClassifier(VTKPythonAlgorithmBase):
-    def __init__(self, visualize=True):
+    def __init__(self):
         VTKPythonAlgorithmBase.__init__(self,
                                         nInputPorts=2, inputType='vtkImageData',
                                         nOutputPorts=1, outputType='vtkImageData')
-        self._visualize = visualize
-        if self._visualize:
-            self._f, (self._ax1, self._ax2, self._ax3, self._ax4) = \
-                plt.subplots(1, 4, sharex=False, sharey=True)
-            self._f.show()
+
+        self._postprocess = []
+        self._postprocess_im1 = []
+        self._postprocess_im2 = []
+        self._postprocess_difim = []
+
+    def set_postprocess(self, do_postprocess):
+        self._postprocess = do_postprocess
+
+    def postprocess_function(self):
+        return self._postprocess_im1
 
     def RequestInformation(self, request, inInfo, outInfo):
         logging.info('')
@@ -63,17 +69,10 @@ class FilterClassifier(VTKPythonAlgorithmBase):
         # by setting them to one. By doing this FilterDepthImageToSurface
         # will assume they lie on the clipping plane and will remove them
         difim = abs(im1 - im2) < 0.01
-        if self._visualize:
-            imout = np.copy(im1)
-            imout[difim] = 1.0
-            self._ax1.imshow(im1, origin='lower', interpolation='none')
-            self._ax2.imshow(im2, origin='lower', interpolation='none')
-            self._ax3.imshow(difim, origin='lower', interpolation='none', cmap='Greys_r')
-            self._ax4.imshow(imout, origin='lower', interpolation='none')
-            plt.draw()
-        else:
-            imout = im1
-            imout[difim] = 1.0
+        if self._postprocess:
+            self._postprocess_im1 = im1.copy()
+        imout = im1
+        imout[difim] = 1.0
 
         info = outInfo.GetInformationObject(0)
         ue = info.Get(vtk.vtkStreamingDemandDrivenPipeline.UPDATE_EXTENT())
