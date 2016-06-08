@@ -26,7 +26,7 @@ class FilterClassifier(VTKPythonAlgorithmBase):
         self._postprocess = do_postprocess
 
     def postprocess_function(self):
-        return self._postprocess_im1
+        return (self._postprocess_im1, self._postprocess_im2, self._postprocess_difim)
 
     def RequestInformation(self, request, inInfo, outInfo):
         logging.info('')
@@ -71,6 +71,8 @@ class FilterClassifier(VTKPythonAlgorithmBase):
         difim = abs(im1 - im2) < 0.01
         if self._postprocess:
             self._postprocess_im1 = im1.copy()
+            self._postprocess_im2 = im2.copy()
+            self._postprocess_difim = difim.copy()
         imout = im1
         imout[difim] = 1.0
 

@@ -11,4 +11,3 @@ from MabdiUtilities import VTKImageActorObjects
 from MabdiUtilities import VTKPolyDataActorObjects
 from MabdiUtilities import DebugTimeVTKFilter
 from MabdiUtilities import PostProcess
-from MabdiUtilities import VTKWindowToMovie

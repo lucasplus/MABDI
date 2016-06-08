@@ -27,12 +27,12 @@ class MabdiSimulate(object):
 
         """ Sensor path """
 
-        self.position, self.lookat = self._create_sensor_path('line')
+        self.position, self.lookat = self._create_sensor_path('circle')
 
         """ Filters and sources (this block is basically the core of MABDI) """
 
         self.source = mabdi.SourceEnvironmentTable()
-        self.di = mabdi.FilterDepthImage(offscreen=True, name='sensor')
+        self.di = mabdi.FilterDepthImage(offscreen=True, name='sensor', noise=True)
         self.sdi = mabdi.FilterDepthImage(offscreen=True, name='simulated sensor')
         self.classifier = mabdi.FilterClassifier()
         self.surf = mabdi.FilterDepthImageToSurface()
@@ -106,7 +106,7 @@ class MabdiSimulate(object):
             path_name == 'line'
 
         if path_name == 'line':
-            rang = np.linspace(0, 1, num=20)
+            rang = np.linspace(0, 1, num=10)
             length = 3
             position = np.vstack((length*(2*rang-1),
                                   np.ones(len(rang)),
@@ -115,7 +115,7 @@ class MabdiSimulate(object):
                                 .5 * np.ones(len(rang)),
                                 np.zeros(len(rang)))).T
         elif path_name == 'circle':
-            rang = np.linspace(0, 1, num=20)
+            rang = np.linspace(0, 1, num=50)
             radius = 3
             nspins = 2
             position = np.vstack((radius * np.sin(rang*np.pi*2*nspins),
@@ -206,20 +206,17 @@ class MabdiSimulate(object):
 
             logging.debug('di.Modified()')
             self.di.Modified()
-
             logging.debug('sdi.Modified()')
             self.sdi.Modified()
-
             logging.debug('classifier.Update()')
             self.classifier.Update()
-
             logging.debug('mesh.Update()')
             self.mesh.Update()
 
             logging.debug('iren.Render()')
             self.iren.Render()
 
-            # logging.debug('wtm.grab_frame()')
+            # logging.debug('pp.collect_info()')
             pp.collect_info()
 
             #self.iren.Start()
@@ -227,7 +224,7 @@ class MabdiSimulate(object):
             end = timer()
             logging.debug('END MAIN LOOP time {:.4f} seconds'.format(end - start))
 
-        pp.save()
+        pp.save_movie()
 
         """ Exit gracefully """
 

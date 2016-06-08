@@ -107,62 +107,27 @@ class PostProcess(object):
         self._filter_classifier.set_postprocess(True)
         return
 
-    def save(self):
+    def save_movie(self):
         # http://matplotlib.org/examples/animation/moviewriter.html
-        fig, (ax1, ax2) = plt.subplots(2, 1)
-        ax1.axis('off')
-        ax2.axis('off')
+        fig = plt.figure(frameon=False, dpi=100)
+        ax1 = plt.subplot2grid((2, 3), (0, 0), colspan=3)
+        ax2 = plt.subplot2grid((2, 3), (1, 0))
+        ax3 = plt.subplot2grid((2, 3), (1, 1))
+        ax4 = plt.subplot2grid((2, 3), (1, 2))
+        ax1.axis('off', frameon=False)
+        ax2.axis('off', frameon=False)
+        ax3.axis('off', frameon=False)
+        ax4.axis('off', frameon=False)
         with self._writer.saving(fig, "writer_test.mp4", 100):
             for i, (im_s, im_c) in enumerate(zip(self._ims_scenario, self._ims_classifier)):
-                logging.debug('VTKWindowToMovie {} of {}'.format(i+1, len(self._ims_scenario)))
+                logging.debug('PostProcessing movie frame {} of {}'.format(i+1, len(self._ims_scenario)))
                 ax1.imshow(im_s, origin='lower', interpolation='none')
-                ax2.imshow(im_c, origin='lower', interpolation='none')
+                ax2.imshow(im_c[0], origin='lower', interpolation='none')
+                ax3.imshow(im_c[1], origin='lower', interpolation='none')
+                ax4.imshow(im_c[2], origin='lower', interpolation='none', cmap='Greys_r')
                 self._writer.grab_frame()
-        print fig.dpi
-        print fig.get_size_inches()*fig.dpi
+        logging.info('Figure dpi {}, Figure pixel size {}'
+                     .format(fig.dpi, fig.get_size_inches()*fig.dpi))
 
-
-class VTKWindowToMovie(object):
-
-    def __init__(self, vtk_render_window):
-
-        self._vtk_render_window = vtk_render_window
-
-        self._ims = []
-
-        ffmpegwriter = animation.writers['ffmpeg']
-        metadata = dict(title='Movie Test', artist='Matplotlib',
-                        comment='Movie support!')
-        self._writer = ffmpegwriter(fps=1, metadata=metadata)
-
-    def grab_frame(self):
-        logging.info('')
-        start = timer()
-
-        # get the image
-        # have to crate a new instance of vtkWindowToImageFilter each time unfortunately
-        window_to_image_filter = vtk.vtkWindowToImageFilter()
-        window_to_image_filter.SetInput(self._vtk_render_window)
-        window_to_image_filter.Update()
-        inp = window_to_image_filter.GetOutput()
-
-        # append it to instance memory
-        im = numpy_support.vtk_to_numpy(inp.GetPointData().GetScalars()).reshape(480*1, 640*2, 3)
-        self._ims.append(im)
-
-        end = timer()
-        logging.info('VTKWindowToMovie time {:.4f} seconds'.format(end - start))
-
-    def save(self):
-        # http://matplotlib.org/examples/animation/moviewriter.html
-        fig = plt.figure(figsize=(16, 6), dpi=100)
-        with self._writer.saving(fig, "writer_test.mp4", 100):
-            for i, im in enumerate(self._ims):
-                logging.debug('VTKWindowToMovie {} of {}'.format(i+1, len(self._ims)))
-                plt.imshow(im, origin='lower', interpolation='none')
-                plt.axis('off')
-                self._writer.grab_frame()
-        print fig.dpi
-        print fig.get_size_inches()*fig.dpi
 
 
