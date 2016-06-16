@@ -81,11 +81,6 @@ class PostProcess(object):
 
         self._filter_classifier = []
 
-        self._vtk_render_window.AddObserver('RenderEvent', self.collect_info_cb)
-
-    def collect_info_cb(self, obj, ev):
-        self.collect_info()
-
     def collect_info(self):
         logging.info('')
         start = timer()
