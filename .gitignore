@@ -4,6 +4,10 @@
 # (change this to share my PyCharm configuration)
 .idea
 
+#___________________________________ Mabdi specific
+# folder for output from the scripts, don't want to version control
+output
+
 #___________________________________ Github suggested python ignores
 
 # Byte-compiled / optimized / DLL files

@@ -67,19 +67,24 @@ class PostProcess(object):
     Handle creating movies and figures
     """
 
-    def __init__(self, vtk_render_window):
+    def __init__(self, vtk_render_window=None, length_of_path=None, file_prefix=None):
 
         self._vtk_render_window = vtk_render_window
+        self._file_prefix = file_prefix
 
         self._ims_scenario = []
         self._ims_classifier = []
 
+        # TODO check if user has ffmpeg
         ffmpegwriter = animation.writers['ffmpeg']
-        metadata = dict(title='Movie Test', artist='Matplotlib',
-                        comment='Movie support!')
-        self._writer = ffmpegwriter(fps=2, metadata=metadata)
+        self._writer = ffmpegwriter(fps=2)
 
         self._filter_classifier = []
+
+        self._vtk_render_window.AddObserver('RenderEvent', self.collect_info_cb)
+
+    def collect_info_cb(self, obj, ev):
+        self.collect_info()
 
     def collect_info(self):
         logging.info('')
@@ -108,6 +113,7 @@ class PostProcess(object):
         return
 
     def save_movie(self):
+        logging.info('Number of frames {}'.format(len(self._ims_scenario)))
         # http://matplotlib.org/examples/animation/moviewriter.html
         fig = plt.figure(frameon=False, figsize=(20*2, 10*2), dpi=100)
         ax1 = plt.subplot2grid((2, 3), (0, 0), colspan=3)
@@ -118,7 +124,8 @@ class PostProcess(object):
         ax2.axis('off', frameon=False)
         ax3.axis('off', frameon=False)
         ax4.axis('off', frameon=False)
-        with self._writer.saving(fig, "writer_test.mp4", 100):
+        plt.tight_layout(pad=0.0, h_pad=0.0, w_pad=0.0)  # adjust padding
+        with self._writer.saving(fig, self._file_prefix + "movie.mp4", 100):
             for i, (im_s, im_c) in enumerate(zip(self._ims_scenario, self._ims_classifier)):
                 logging.debug('PostProcessing movie frame {} of {}'.format(i+1, len(self._ims_scenario)))
                 ax1.imshow(im_s, origin='lower', interpolation='none')

@@ -1,3 +1,5 @@
+import os
+
 import vtk
 from vtk.util.colors import eggshell, slate_grey_light, red, yellow, salmon, blue, hot_pink
 from vtk.util import numpy_support
@@ -33,7 +35,10 @@ class MabdiSimulate(object):
             images after the simulation runs. default=False
         """
 
-        self._start_time = time.strftime('%m-%d_%H-%M-%S')
+        start_time = time.strftime('%m-%d_%H-%M-%S_')
+        self._file_prefix = '../output/' + start_time
+        if not os.path.exists('../output/'):
+            os.makedirs('../output/')
 
         """ Configuration parameters """
 
@@ -43,6 +48,7 @@ class MabdiSimulate(object):
 
         postprocess = {} if not postprocess else postprocess
         postprocess['movie'] = False if 'movie' not in postprocess else postprocess['movie']
+        self._postprocess = postprocess
 
         """ Sensor path """
 
@@ -210,8 +216,11 @@ class MabdiSimulate(object):
 
         self.iren.Start()
 
-        pp = mabdi.PostProcess(self.renWin)
-        pp.register_filter_classifier(self.classifier)
+        if self._postprocess['movie']:
+            pp = mabdi.PostProcess(vtk_render_window=self.renWin,
+                                   length_of_path=len(self.position),
+                                   file_prefix=self._file_prefix)
+            pp.register_filter_classifier(self.classifier)
 
         for i, (pos, lka) in enumerate(zip(self.position, self.lookat)):
             logging.debug('START MAIN LOOP')
@@ -232,15 +241,13 @@ class MabdiSimulate(object):
             logging.debug('iren.Render()')
             self.iren.Render()
 
-            # logging.debug('pp.collect_info()')
-            pp.collect_info()
-
-            self.iren.Start()
+            # self.iren.Start()
 
             end = timer()
             logging.debug('END MAIN LOOP time {:.4f} seconds'.format(end - start))
 
-        pp.save_movie()
+        if self._postprocess['movie']:
+            pp.save_movie()
 
         """ Exit gracefully """
 
