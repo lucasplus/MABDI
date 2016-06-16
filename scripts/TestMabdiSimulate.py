@@ -8,6 +8,7 @@ logging.basicConfig(level=logging.DEBUG,
 
 
 sim = mabdi.MabdiSimulate(path={'shape': 'circle', 'length': 10},
-                          postprocess={'movie': True})
+                          postprocess={'movie': True},
+                          interactive=True)
 
 sim.run()

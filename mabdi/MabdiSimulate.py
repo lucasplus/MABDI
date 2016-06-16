@@ -24,7 +24,7 @@ class MabdiSimulate(object):
     Flags for describing the environment, path, and visualization
     """
 
-    def __init__(self, path=None, postprocess=None):
+    def __init__(self, path=None, postprocess=None, interactive=False):
         """
         Initialize all the vtkPythonAlgorithms that make up MABDI
         :param path:
@@ -49,6 +49,8 @@ class MabdiSimulate(object):
         postprocess = {} if not postprocess else postprocess
         postprocess['movie'] = False if 'movie' not in postprocess else postprocess['movie']
         self._postprocess = postprocess
+
+        self._interactive = interactive
 
         """ Sensor path """
 
@@ -241,7 +243,11 @@ class MabdiSimulate(object):
             logging.debug('iren.Render()')
             self.iren.Render()
 
-            # self.iren.Start()
+            if self._postprocess['movie']:
+                pp.collect_info()
+
+            if self._interactive:
+                self.iren.Start()
 
             end = timer()
             logging.debug('END MAIN LOOP time {:.4f} seconds'.format(end - start))
