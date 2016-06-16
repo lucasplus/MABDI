@@ -43,6 +43,9 @@ class FilterDepthImageToSurface(VTKPythonAlgorithmBase):
         self._extract.SetImplicitFunction(planefunc)
 
     def RequestData(self, request, inInfo, outInfo):
+        """
+        Note: vtkDataSetTriangleFilter  might be a better way to do this
+        """
         logging.info('')
         start = timer()
 
@@ -165,12 +168,3 @@ class FilterDepthImageToSurface(VTKPythonAlgorithmBase):
         tend = timer()
         logging.info('Initializing arrays for projection calculation {:.4f} seconds'.format(tend - tstart))
 
-"""
-# show me
-# plt.imshow(di, origin='lower')
-plt.imshow(
-    invalid_index.reshape((self._sizey, self._sizex)),
-    origin='lower',
-    interpolation='none')
-plt.show()
-"""

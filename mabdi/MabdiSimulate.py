@@ -11,6 +11,8 @@ import numpy as np
 import logging
 from timeit import default_timer as timer
 
+import time
+
 
 class MabdiSimulate(object):
     """
@@ -20,14 +22,32 @@ class MabdiSimulate(object):
     Flags for describing the environment, path, and visualization
     """
 
-    def __init__(self):
+    def __init__(self, path=None, postprocess=None):
         """
         Initialize all the vtkPythonAlgorithms that make up MABDI
+        :param path:
+          * path['shape'] - 'line' 'circle' default='line'
+          * path['length'] - length of path default=20
+        :param postprocess:
+          * postprocess['movie'] - Create a movie with the scenario view, and depth
+            images after the simulation runs. default=False
         """
+
+        self._start_time = time.strftime('%m-%d_%H-%M-%S')
+
+        """ Configuration parameters """
+
+        path = {} if not path else path
+        path['shape'] = 'line' if 'shape' not in path else path['shape']
+        path['length'] = 20 if 'length' not in path else path['length']
+
+        postprocess = {} if not postprocess else postprocess
+        postprocess['movie'] = False if 'movie' not in postprocess else postprocess['movie']
 
         """ Sensor path """
 
-        self.position, self.lookat = self._create_sensor_path('circle')
+        self.position, self.lookat = \
+            self._create_sensor_path(path['shape'], path['length'])
 
         """ Filters and sources (this block is basically the core of MABDI) """
 
@@ -100,27 +120,23 @@ class MabdiSimulate(object):
 
         return
 
-    def _create_sensor_path(self, path_name=None):
-        if not path_name:
-            logging.warning('Path name not specified. Defaulting to line')
-            path_name == 'line'
+    def _create_sensor_path(self, pname, nsteps):
 
-        if path_name == 'line':
-            rang = np.linspace(0, 1, num=10)
+        rang = np.linspace(0, 1, num=nsteps)
+        if pname == 'line':
             length = 3
-            position = np.vstack((length*(2*rang-1),
+            position = np.vstack((length * (2 * rang - 1),
                                   np.ones(len(rang)),
-                                  1.5*np.ones(len(rang)))).T
-            lookat = np.vstack((length*(2*rang-1),
+                                  1.5 * np.ones(len(rang)))).T
+            lookat = np.vstack((length * (2 * rang - 1),
                                 .5 * np.ones(len(rang)),
                                 np.zeros(len(rang)))).T
-        elif path_name == 'circle':
-            rang = np.linspace(0, 1, num=50)
+        elif pname == 'circle':
             radius = 3
             nspins = 2
-            position = np.vstack((radius * np.sin(rang*np.pi*2*nspins),
+            position = np.vstack((radius * np.sin(rang * np.pi * 2 * nspins),
                                   np.ones(len(rang)),
-                                  radius * np.cos(rang*np.pi*2*nspins))).T
+                                  radius * np.cos(rang * np.pi * 2 * nspins))).T
             lookat = np.vstack((np.zeros(len(rang)),
                                 np.ones(len(rang)) * .5,
                                 np.zeros(len(rang)))).T
@@ -219,7 +235,7 @@ class MabdiSimulate(object):
             # logging.debug('pp.collect_info()')
             pp.collect_info()
 
-            #self.iren.Start()
+            self.iren.Start()
 
             end = timer()
             logging.debug('END MAIN LOOP time {:.4f} seconds'.format(end - start))

@@ -109,7 +109,7 @@ class PostProcess(object):
 
     def save_movie(self):
         # http://matplotlib.org/examples/animation/moviewriter.html
-        fig = plt.figure(frameon=False, dpi=100)
+        fig = plt.figure(frameon=False, figsize=(20*2, 10*2), dpi=100)
         ax1 = plt.subplot2grid((2, 3), (0, 0), colspan=3)
         ax2 = plt.subplot2grid((2, 3), (1, 0))
         ax3 = plt.subplot2grid((2, 3), (1, 1))
