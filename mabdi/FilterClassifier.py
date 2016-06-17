@@ -25,8 +25,15 @@ class FilterClassifier(VTKPythonAlgorithmBase):
     def set_postprocess(self, do_postprocess):
         self._postprocess = do_postprocess
 
-    def postprocess_function(self):
-        return (self._postprocess_im1, self._postprocess_im2, self._postprocess_difim)
+    def get_depth_images(self):
+        """
+        Get the depth images. User has to call set_postprocess(True) first.
+        :return: Depth images
+          * return[0] - actual
+          * return[1] - expected
+          * return[2] - threshold absolute difference
+        """
+        return self._postprocess_im1, self._postprocess_im2, self._postprocess_difim
 
     def RequestInformation(self, request, inInfo, outInfo):
         logging.info('')
@@ -57,10 +64,10 @@ class FilterClassifier(VTKPythonAlgorithmBase):
         # convert to numpy arrays
         dim = inp1.GetDimensions()
         im1 = numpy_support.vtk_to_numpy(inp1.GetPointData().GetScalars())\
-            .reshape((dim[1], dim[0]))
+            .reshape(dim[1], dim[0])
         dim = inp1.GetDimensions()
         im2 = numpy_support.vtk_to_numpy(inp2.GetPointData().GetScalars())\
-            .reshape((dim[1], dim[0]))
+            .reshape(dim[1], dim[0])
 
         # difference in the images
         # im1 is assumed to be from the actual sensor

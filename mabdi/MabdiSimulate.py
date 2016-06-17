@@ -26,11 +26,11 @@ class MabdiSimulate(object):
         """
         Initialize all the vtkPythonAlgorithms that make up MABDI
         :param path:
-          * path['shape'] - 'line' 'circle' default='line'
-          * path['length'] - length of path default=20
+          * path['shape'] - default='line' - 'line' 'circle'
+          * path['length'] - default=20 - length of path
         :param postprocess:
-          * postprocess['movie'] - Create a movie with the scenario view, and depth
-            images after the simulation runs. default=False
+          * postprocess['movie'] - default=False - Create a movie with
+          the scenario view, and depth images after the simulation runs.
         """
 
         start_time = time.strftime('%m-%d_%H-%M-%S_')
@@ -217,10 +217,11 @@ class MabdiSimulate(object):
         self.iren.Start()
 
         if self._postprocess['movie']:
-            pp = mabdi.PostProcess(vtk_render_window=self.renWin,
+            pp = mabdi.PostProcess(movie={'scenario': True, 'depth_images': True},
+                                   scenario_render_window=self.renWin,
+                                   filter_classifier=self.classifier,
                                    length_of_path=len(self.position),
                                    file_prefix=self._file_prefix)
-            pp.register_filter_classifier(self.classifier)
 
         for i, (pos, lka) in enumerate(zip(self.position, self.lookat)):
             logging.debug('START MAIN LOOP')
