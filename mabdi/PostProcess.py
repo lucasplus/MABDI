@@ -61,19 +61,6 @@ class PostProcess(object):
             logging.critical('Problem with movie[\'depth_images\'] and filter_classifier')
             sys.exit()
 
-        # initialize containers for images
-        if length_of_path:
-            self._ims_initialized = True
-            self._count = -1
-            dim = self._get_scenario_image().GetDimensions()
-            self._ims_scenario = [np.zeros((dim[1], dim[0], 3)) for i in range(length_of_path)]
-            self._ims_d_images = [(np.zeros((640, 480, 3)),
-                                   np.zeros((640, 480, 3)),
-                                   np.zeros((640, 480, 1))) for i in range(length_of_path)]
-        else:
-            self._ims_initialized = False
-            self._count = None
-
         try:
             ffmpegwriter = animation.writers['ffmpeg']
         except KeyError:
@@ -85,25 +72,15 @@ class PostProcess(object):
         logging.info('')
         start = timer()
 
-        i = 0
-        if self._ims_initialized:
-            self._count += 1
-            i = self._count
-
         # scenario - get the image from the renderer
         inp = self._get_scenario_image()
         dim = inp.GetDimensions()
         im = numpy_support.vtk_to_numpy(inp.GetPointData().GetScalars()).reshape(dim[1], dim[0], 3)
-        if self._ims_initialized:
-            self._ims_scenario[i] = im
-        else:
-            self._ims_scenario.append(im)
+        self._ims_scenario.append(im)
 
+        # depth images
         ims = self._filter_classifier.get_depth_images()
-        if self._ims_initialized:
-            self._ims_d_images[i] = ims
-        else:
-            self._ims_d_images.append(ims)
+        self._ims_d_images.append(ims)
 
         end = timer()
         logging.info('PostProcess time {:.4f} seconds'.format(end - start))
@@ -124,14 +101,21 @@ class PostProcess(object):
         plt.tight_layout(pad=0.0, h_pad=0.0, w_pad=0.0)  # adjust padding
         with self._writer.saving(fig, self._file_prefix + "movie.mp4", 100):
             for i, (im_s, im_c) in enumerate(zip(self._ims_scenario, self._ims_d_images)):
-                logging.debug('PostProcessing movie frame {} of {}'.format(i+1, len(self._ims_scenario)))
+                start = timer()
+
                 ax1.imshow(im_s, origin='lower', interpolation='none')
                 ax2.imshow(im_c[0], origin='lower', interpolation='none')
                 ax3.imshow(im_c[1], origin='lower', interpolation='none')
                 ax4.imshow(im_c[2], origin='lower', interpolation='none', cmap='Greys_r')
                 self._writer.grab_frame()
+
+                end = timer()
+                logging.debug('Processed movie frame {} of {}, {} seconds'.format(i+1,
+                                                                                  len(self._ims_scenario),
+                                                                                  end - start))
         logging.info('Figure dpi {}, Figure pixel size {}'
                      .format(fig.dpi, fig.get_size_inches()*fig.dpi))
+        del self._ims_scenario, self._ims_d_images
 
     def _get_scenario_image(self):
         window_to_image_filter = vtk.vtkWindowToImageFilter()
