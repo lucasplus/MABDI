@@ -1,65 +1,11 @@
 import vtk
-from vtk.util.colors import eggshell, slate_grey_light, red, yellow, salmon
 from vtk.util import numpy_support
-from vtk.numpy_interface import dataset_adapter as dsa
-from vtk.numpy_interface import algorithms as alg
 
-from timeit import default_timer as timer
-import logging
-
-import numpy as np
-import matplotlib
-# matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 
-""" VTK container classes """
-
-
-class VTKPolyDataActorObjects(object):
-
-    def __init__(self, in_source):
-        self.mapper = vtk.vtkPolyDataMapper()
-        self.mapper.SetInputConnection(in_source.GetOutputPort())
-
-        self.actor = vtk.vtkActor()
-        self.actor.SetMapper(self.mapper)
-
-
-class VTKImageActorObjects(object):
-
-    def __init__(self, in_source):
-        self.mapper = vtk.vtkImageMapper()
-        self.mapper.SetInputConnection(in_source.GetOutputPort())
-
-        self.actor = vtk.vtkActor2D()
-        self.actor.SetMapper(self.mapper)
-
-
-""" Debug helper classes """
-
-
-class DebugTimeVTKFilter(object):
-
-    def __init__(self, in_filter):
-        self._start = 0
-        self._end = 0
-        self._name = in_filter.GetClassName()
-
-        in_filter.AddObserver('StartEvent', self.start_event_callback)
-        in_filter.AddObserver('EndEvent', self.end_event_callback)
-
-    def start_event_callback(self, obj, env):
-        self._start = timer()
-
-    def end_event_callback(self, obj, env):
-        self._end = timer()
-        logging.debug('{} execution time {:.4f} seconds'.format(
-            self._name,
-            self._end - self._start))
-
-
-""" Visualize helpers """
+from timeit import default_timer as timer
+import logging
 
 
 class PostProcess(object):
@@ -130,6 +76,3 @@ class PostProcess(object):
                 self._writer.grab_frame()
         logging.info('Figure dpi {}, Figure pixel size {}'
                      .format(fig.dpi, fig.get_size_inches()*fig.dpi))
-
-
-

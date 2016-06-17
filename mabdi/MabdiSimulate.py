@@ -3,8 +3,6 @@ import os
 import vtk
 from vtk.util.colors import eggshell, slate_grey_light, red, yellow, salmon, blue, hot_pink
 from vtk.util import numpy_support
-from vtk.numpy_interface import dataset_adapter as dsa
-from vtk.numpy_interface import algorithms as alg
 
 import mabdi
 

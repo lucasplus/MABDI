@@ -4,7 +4,7 @@ from vtk.util import numpy_support
 from vtk.numpy_interface import dataset_adapter as dsa
 from vtk.numpy_interface import algorithms as alg
 
-from MabdiUtilities import DebugTimeVTKFilter
+from Utilities import DebugTimeVTKFilter
 
 import numpy as np
 from scipy import ndimage
