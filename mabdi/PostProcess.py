@@ -46,20 +46,22 @@ class PostProcess(object):
         movie['fps'] = 2 if 'fps' not in movie else movie['fps']
         self._movie = movie
 
-        if movie['scenario'] and scenario_render_window:
-            self._vtk_render_window = scenario_render_window
-            self._ims_scenario = []
-        else:
-            logging.critical('Problem with movie[\'scenario\'] and scenario_render_window')
-            sys.exit()
+        if self._movie['scenario']:
+            if scenario_render_window:
+                self._vtk_render_window = scenario_render_window
+                self._ims_scenario = []
+            else:
+                logging.critical('Problem with movie[\'scenario\'] and scenario_render_window')
+                sys.exit()
 
-        if movie['depth_images'] and filter_classifier:
-            self._filter_classifier = filter_classifier
-            self._filter_classifier.set_postprocess(True)
-            self._ims_d_images = []
-        else:
-            logging.critical('Problem with movie[\'depth_images\'] and filter_classifier')
-            sys.exit()
+        if self._movie['depth_images']:
+            if filter_classifier:
+                self._filter_classifier = filter_classifier
+                self._filter_classifier.set_postprocess(True)
+                self._ims_d_images = []
+            else:
+                logging.critical('Problem with movie[\'depth_images\'] and filter_classifier')
+                sys.exit()
 
         try:
             ffmpegwriter = animation.writers['ffmpeg']
@@ -73,14 +75,16 @@ class PostProcess(object):
         start = timer()
 
         # scenario - get the image from the renderer
-        inp = self._get_scenario_image()
-        dim = inp.GetDimensions()
-        im = numpy_support.vtk_to_numpy(inp.GetPointData().GetScalars()).reshape(dim[1], dim[0], 3)
-        self._ims_scenario.append(im)
+        if self._movie['scenario']:
+            inp = self._get_scenario_image()
+            dim = inp.GetDimensions()
+            im = numpy_support.vtk_to_numpy(inp.GetPointData().GetScalars()).reshape(dim[1], dim[0], 3)
+            self._ims_scenario.append(im)
 
         # depth images
-        ims = self._filter_classifier.get_depth_images()
-        self._ims_d_images.append(ims)
+        if self._movie['depth_images']:
+            ims = self._filter_classifier.get_depth_images()
+            self._ims_d_images.append(ims)
 
         end = timer()
         logging.info('PostProcess time {:.4f} seconds'.format(end - start))
