@@ -24,16 +24,16 @@ class MabdiSimulate(object):
 
     def __init__(self,
                  mabdi_param=None,
-                 path=None,
-                 postprocess=None,
+                 sim_param=None,
+                 output=None,
                  interactive=False):
         """
         Initialize all the vtkPythonAlgorithms that make up MABDI
-        :param path:
-          * path['shape'] - default='line' - 'line' 'circle'
-          * path['length'] - default=20 - length of path
-        :param postprocess:
-          * postprocess['movie'] - default=False - Create a movie with
+        :param sim_param:
+          * sim_param['shape'] - default='line' - 'line' 'circle'
+          * sim_param['length'] - default=20 - length of sim_param
+        :param output:
+          * output['movie'] - default=False - Create a movie with
           the scenario view, and depth images after the simulation runs.
         """
 
@@ -44,23 +44,23 @@ class MabdiSimulate(object):
 
         """ Configuration parameters """
 
-        path = {} if not path else path
-        path['shape'] = 'line' if 'shape' not in path else path['shape']
-        path['length'] = 20 if 'length' not in path else path['length']
-
-        postprocess = {} if not postprocess else postprocess
-        postprocess['movie'] = False if 'movie' not in postprocess else postprocess['movie']
-        self._postprocess = postprocess
-
         mabdi_param = {} if not mabdi_param else mabdi_param
-        mabdi_param['depth_image_size'] = (640, 480) if 'depth_image_size' not in mabdi_param else mabdi_param['depth_image_size']
+        mabdi_param.setdefault('depth_image_size', (640, 480))
 
-        self._interactive = interactive
+        sim_param = {} if not sim_param else sim_param
+        sim_param.setdefault('path_name', 'line')
+        sim_param.setdefault('path_length', 20)
+        sim_param.setdefault('interactive', False)
+        self._sim_param = sim_param
+
+        output = {} if not output else output
+        output.setdefault('movie', False)
+        self._output = output
 
         """ Sensor path """
 
         self.position, self.lookat = \
-            self._create_sensor_path(path['shape'], path['length'])
+            self._create_sensor_path(sim_param['path_name'], sim_param['path_length'])
 
         """ Filters and sources (this block is basically the core of MABDI) """
 
@@ -228,7 +228,7 @@ class MabdiSimulate(object):
 
         self.iren.Start()
 
-        if self._postprocess['movie']:
+        if self._output['movie']:
             pp = mabdi.PostProcess(
                 movie={'scenario': True,
                        'depth_images': True,
@@ -258,16 +258,16 @@ class MabdiSimulate(object):
             logging.debug('iren.Render()')
             self.iren.Render()
 
-            if self._postprocess['movie']:
+            if self._output['movie']:
                 pp.collect_info()
 
-            if self._interactive:
+            if self._sim_param['interactive']:
                 self.iren.Start()
 
             end = timer()
             logging.debug('END MAIN LOOP time {:.4f} seconds'.format(end - start))
 
-        if self._postprocess['movie']:
+        if self._output['movie']:
             pp.save_movie()
 
         """ Exit gracefully """

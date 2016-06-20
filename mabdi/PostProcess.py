@@ -46,10 +46,10 @@ class PostProcess(object):
 
         # movie dictionary defaults
         movie = {} if not movie else movie
-        movie['scenario'] = True if 'scenario' not in movie else movie['scenario']
-        movie['depth_images'] = True if 'depth_images' not in movie else movie['depth_images']
-        movie['plots'] = False if 'plots' not in movie else movie['plots']
-        movie['param_fps'] = 2 if 'param_fps' not in movie else movie['param_fps']
+        movie.setdefault('scenario', True)
+        movie.setdefault('depth_images', True)
+        movie.setdefault('plots', False)
+        movie.setdefault('param_fps', 2)
         self._movie = movie
 
         if self._movie['scenario']:

@@ -7,8 +7,9 @@ logging.basicConfig(level=logging.DEBUG,
 
 sim = mabdi.MabdiSimulate(
     mabdi_param={'depth_image_size': (320, 240)},
-    path={'shape': 'circle', 'length': 10},
-    postprocess={'movie': True},
-    interactive=False)
+    sim_param={'path_name': 'circle',
+               'path_length': 10,
+               'interactive': False},
+    output={'movie': True})
 
 sim.run()
