@@ -22,7 +22,11 @@ class MabdiSimulate(object):
     Flags for describing the environment, path, and visualization
     """
 
-    def __init__(self, path=None, postprocess=None, interactive=False):
+    def __init__(self,
+                 mabdi_param=None,
+                 path=None,
+                 postprocess=None,
+                 interactive=False):
         """
         Initialize all the vtkPythonAlgorithms that make up MABDI
         :param path:
@@ -48,6 +52,9 @@ class MabdiSimulate(object):
         postprocess['movie'] = False if 'movie' not in postprocess else postprocess['movie']
         self._postprocess = postprocess
 
+        mabdi_param = {} if not mabdi_param else mabdi_param
+        mabdi_param['depth_image_size'] = (640, 480) if 'depth_image_size' not in mabdi_param else mabdi_param['depth_image_size']
+
         self._interactive = interactive
 
         """ Sensor path """
@@ -58,8 +65,13 @@ class MabdiSimulate(object):
         """ Filters and sources (this block is basically the core of MABDI) """
 
         self.source = mabdi.SourceEnvironmentTable()
-        self.di = mabdi.FilterDepthImage(offscreen=True, name='sensor', noise=True)
-        self.sdi = mabdi.FilterDepthImage(offscreen=True, name='simulated sensor')
+        self.di = mabdi.FilterDepthImage(offscreen=True,
+                                         name='sensor',
+                                         noise=True,
+                                         depth_image_size=mabdi_param['depth_image_size'])
+        self.sdi = mabdi.FilterDepthImage(offscreen=True,
+                                          name='simulated sensor',
+                                          depth_image_size=mabdi_param['depth_image_size'])
         self.classifier = mabdi.FilterClassifier()
         self.surf = mabdi.FilterDepthImageToSurface()
         self.mesh = mabdi.FilterWorldMesh(color=True)

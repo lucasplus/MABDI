@@ -132,12 +132,20 @@ class PostProcess(object):
                 ax.axis('off', frameon=False)
         if self._movie['plots']:
             rn += 1
-            axs.append(plt.subplot2grid((fnr, 3), (rn, 0),
-                                        title='Size of global mesh',
-                                        xlabel='iteration',
-                                        ylabel='number of elements', ))
-            plt.grid(True)
+            axs.append(plt.subplot2grid((fnr, 3), (rn, 0)))
             ax = axs[-1]
+
+            ax.plot(np.arange(1, len(self._global_mesh_nc)+1), np.array(self._global_mesh_nc))
+            xlim, ylim = ax.get_xlim(), ax.get_ylim()
+            ax.clear()
+            ax.set_xlim(xlim)
+            ax.set_ylim(ylim)
+
+            plt.title('Size of global mesh')
+            plt.xlabel('iteration')
+            plt.ylabel('number of elements')
+            plt.grid(True)
+
             for item in ([ax.title, ax.xaxis.label, ax.yaxis.label] +
                              ax.get_xticklabels() + ax.get_yticklabels()):
                 item.set_fontsize(25)
@@ -161,8 +169,10 @@ class PostProcess(object):
                     axscy.next().imshow(im_d[1], origin='lower', interpolation='none')
                     axscy.next().imshow(im_d[2], origin='lower', interpolation='none', cmap='Greys_r')
                 if self._movie['plots']:
-                    axscy.next().plot(range(self._np),
-                                      self._global_mesh_nc)  # [0:i+1]
+                    axscy.next().plot(np.arange(1, i+1+1),
+                                      np.array(self._global_mesh_nc[0:i+1]),
+                                      '-*', color='b',
+                                      markersize=10, markerfacecolor='g')
 
                 self._writer.grab_frame()
 

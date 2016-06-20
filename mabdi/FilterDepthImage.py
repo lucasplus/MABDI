@@ -18,7 +18,11 @@ class FilterDepthImage(VTKPythonAlgorithmBase):
     Given the geometric information of the scene (vtkPolyData) and the
     orientation of the depth sensor.
     """
-    def __init__(self, offscreen=False, noise=False, name='none'):
+    def __init__(self,
+                 name='none',
+                 offscreen=False,
+                 noise=False,
+                 depth_image_size=(640, 480)):
         VTKPythonAlgorithmBase.__init__(self,
                                         nInputPorts=0,
                                         nOutputPorts=1, outputType='vtkImageData')
@@ -41,7 +45,7 @@ class FilterDepthImage(VTKPythonAlgorithmBase):
 
         # kinect intrinsic parameters
         # https://msdn.microsoft.com/en-us/library/hh438998.aspx
-        self._renWin.SetSize(640, 480)
+        self._renWin.SetSize(depth_image_size)
         self._ren.GetActiveCamera().SetViewAngle(60.0)
         self._ren.GetActiveCamera().SetClippingRange(0.8, 4.0)
         self._iren.GetInteractorStyle().SetAutoAdjustCameraClippingRange(0)
