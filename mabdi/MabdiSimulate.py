@@ -217,11 +217,15 @@ class MabdiSimulate(object):
         self.iren.Start()
 
         if self._postprocess['movie']:
-            pp = mabdi.PostProcess(movie={'scenario': True, 'depth_images': True},
-                                   scenario_render_window=self.renWin,
-                                   filter_classifier=self.classifier,
-                                   length_of_path=len(self.position),
-                                   file_prefix=self._file_prefix)
+            pp = mabdi.PostProcess(
+                movie={'scenario': True,
+                       'depth_images': True,
+                       'plots': True},
+                scenario_render_window=self.renWin,
+                filter_classifier=self.classifier,
+                length_of_path=len(self.position),
+                global_mesh=self.mesh,
+                file_prefix=self._file_prefix)
 
         for i, (pos, lka) in enumerate(zip(self.position, self.lookat)):
             logging.debug('START MAIN LOOP')

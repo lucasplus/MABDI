@@ -1,5 +1,7 @@
 import sys
 
+from itertools import cycle
+
 import vtk
 from vtk.util import numpy_support
 
@@ -21,6 +23,7 @@ class PostProcess(object):
                  scenario_render_window=None,
                  filter_classifier=None,
                  length_of_path=None,
+                 global_mesh=None,
                  file_prefix=None):
         """
         Create movies, plots, and stats of the MABDI execution
@@ -31,19 +34,22 @@ class PostProcess(object):
           * movie['scenario'] - default=True - whatever is on the scenario_render_window
           * movie['depth_images'] - default=True - depth images from FilterClassifier
           * movie['plots'] - default=False - number of elements
-          * movie['fps'] - default=2 - frames per second
+          * movie['param_fps'] - default=2 - frames per second
         :return:
         """
 
         # we will use this for any file we save
         self._file_prefix = file_prefix
 
+        if length_of_path:
+            self._np = length_of_path
+
         # movie dictionary defaults
         movie = {} if not movie else movie
         movie['scenario'] = True if 'scenario' not in movie else movie['scenario']
         movie['depth_images'] = True if 'depth_images' not in movie else movie['depth_images']
         movie['plots'] = False if 'plots' not in movie else movie['plots']
-        movie['fps'] = 2 if 'fps' not in movie else movie['fps']
+        movie['param_fps'] = 2 if 'param_fps' not in movie else movie['param_fps']
         self._movie = movie
 
         if self._movie['scenario']:
@@ -51,7 +57,7 @@ class PostProcess(object):
                 self._vtk_render_window = scenario_render_window
                 self._ims_scenario = []
             else:
-                logging.critical('Problem with movie[\'scenario\'] and scenario_render_window')
+                logging.critical('Need scenario_render_window for movie[\'scenario\'] option.')
                 sys.exit()
 
         if self._movie['depth_images']:
@@ -60,7 +66,15 @@ class PostProcess(object):
                 self._filter_classifier.set_postprocess(True)
                 self._ims_d_images = []
             else:
-                logging.critical('Problem with movie[\'depth_images\'] and filter_classifier')
+                logging.critical('Need filter_classifier for movie[\'depth_images\'] option.')
+                sys.exit()
+
+        if self._movie['plots']:
+            if global_mesh:
+                self._global_mesh = global_mesh
+                self._global_mesh_nc = []
+            else:
+                logging.critical('Need global_mesh for movie[\'plots\'] option.')
                 sys.exit()
 
         try:
@@ -68,7 +82,7 @@ class PostProcess(object):
         except KeyError:
             logging.critical('ffmpeg not found, please install')
             raise
-        self._writer = ffmpegwriter(fps=movie['fps'])
+        self._writer = ffmpegwriter(fps=movie['param_fps'])
 
     def collect_info(self):
         logging.info('')
@@ -86,6 +100,10 @@ class PostProcess(object):
             ims = self._filter_classifier.get_depth_images()
             self._ims_d_images.append(ims)
 
+        if self._movie['plots']:
+            self._global_mesh_nc.append(
+                self._global_mesh.GetOutputDataObject(0).GetNumberOfCells())
+
         end = timer()
         logging.info('PostProcess time {:.4f} seconds'.format(end - start))
         return
@@ -93,32 +111,70 @@ class PostProcess(object):
     def save_movie(self):
         logging.info('Number of frames {}'.format(len(self._ims_scenario)))
         # http://matplotlib.org/examples/animation/moviewriter.html
-        fig = plt.figure(frameon=False, figsize=(20*2, 10*2), dpi=100)
-        ax1 = plt.subplot2grid((2, 3), (0, 0), colspan=3)
-        ax2 = plt.subplot2grid((2, 3), (1, 0))
-        ax3 = plt.subplot2grid((2, 3), (1, 1))
-        ax4 = plt.subplot2grid((2, 3), (1, 2))
-        ax1.axis('off', frameon=False)
-        ax2.axis('off', frameon=False)
-        ax3.axis('off', frameon=False)
-        ax4.axis('off', frameon=False)
-        plt.tight_layout(pad=0.0, h_pad=0.0, w_pad=0.0)  # adjust padding
+
+        # figure number of rows
+        fnr = sum((self._movie['scenario'],
+                   self._movie['depth_images'],
+                   self._movie['plots']))
+
+        fig = plt.figure(frameon=False, figsize=(40, 10 * fnr), dpi=100)
+
+        axs, rn = [], 0  # list of axes, row number
+        if self._movie['scenario']:
+            axs.append(plt.subplot2grid((fnr, 3), (rn, 0), colspan=3))
+            axs[-1].axis('off', frameon=False)
+        if self._movie['depth_images']:
+            rn += 1
+            axs.append(plt.subplot2grid((fnr, 3), (rn, 0)))
+            axs.append(plt.subplot2grid((fnr, 3), (rn, 1)))
+            axs.append(plt.subplot2grid((fnr, 3), (rn, 2)))
+            for ax in (axs[-1], axs[-2], axs[-3]):
+                ax.axis('off', frameon=False)
+        if self._movie['plots']:
+            rn += 1
+            axs.append(plt.subplot2grid((fnr, 3), (rn, 0),
+                                        title='Size of global mesh',
+                                        xlabel='iteration',
+                                        ylabel='number of elements', ))
+            plt.grid(True)
+            ax = axs[-1]
+            for item in ([ax.title, ax.xaxis.label, ax.yaxis.label] +
+                             ax.get_xticklabels() + ax.get_yticklabels()):
+                item.set_fontsize(25)
+
+        # adjust padding
+        if self._movie['plots']:
+            pad = 5.08
+        else:
+            pad = 0.0
+        plt.tight_layout(pad=pad, h_pad=0.0, w_pad=0.0)
+
         with self._writer.saving(fig, self._file_prefix + "movie.mp4", 100):
-            for i, (im_s, im_c) in enumerate(zip(self._ims_scenario, self._ims_d_images)):
+            for i, (im_s, im_d) in enumerate(zip(self._ims_scenario, self._ims_d_images)):
                 start = timer()
 
-                ax1.imshow(im_s, origin='lower', interpolation='none')
-                ax2.imshow(im_c[0], origin='lower', interpolation='none')
-                ax3.imshow(im_c[1], origin='lower', interpolation='none')
-                ax4.imshow(im_c[2], origin='lower', interpolation='none', cmap='Greys_r')
+                axscy = cycle(axs)
+                if self._movie['scenario']:
+                    axscy.next().imshow(im_s, origin='lower', interpolation='none')
+                if self._movie['depth_images']:
+                    axscy.next().imshow(im_d[0], origin='lower', interpolation='none')
+                    axscy.next().imshow(im_d[1], origin='lower', interpolation='none')
+                    axscy.next().imshow(im_d[2], origin='lower', interpolation='none', cmap='Greys_r')
+                if self._movie['plots']:
+                    axscy.next().plot(range(self._np),
+                                      self._global_mesh_nc)  # [0:i+1]
+
                 self._writer.grab_frame()
 
                 end = timer()
-                logging.debug('Processed movie frame {} of {}, {} seconds'.format(i+1,
-                                                                                  len(self._ims_scenario),
-                                                                                  end - start))
+                logging.debug('Processed movie frame {} of {}, {} seconds'
+                              .format(i + 1,
+                                      len(self._ims_scenario),
+                                      end - start))
+
         logging.info('Figure dpi {}, Figure pixel size {}'
-                     .format(fig.dpi, fig.get_size_inches()*fig.dpi))
+                     .format(fig.dpi, fig.get_size_inches() * fig.dpi))
+
         del self._ims_scenario, self._ims_d_images
 
     def _get_scenario_image(self):
