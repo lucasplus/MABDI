@@ -18,16 +18,31 @@ class FilterDepthImage(VTKPythonAlgorithmBase):
     Given the geometric information of the scene (vtkPolyData) and the
     orientation of the depth sensor.
     """
+
     def __init__(self,
                  name='none',
                  offscreen=False,
-                 noise=False,
+                 noise=0.0,
                  depth_image_size=(640, 480)):
+        """
+        :param name: default='none'
+          Used for the logging statements.
+        :param offscreen:
+          Create the render window that is used to produce the depth image offscreen.
+        :param noise:
+          Noise to add to depth image.
+        :param depth_image_size:
+          Size of the depth image.
+        :return:
+        """
+
         VTKPythonAlgorithmBase.__init__(self,
                                         nInputPorts=0,
                                         nOutputPorts=1, outputType='vtkImageData')
         self._name = name
 
+        if not noise:
+            noise = 0.0
         self._noise = noise
 
         # vtk render objects
@@ -148,9 +163,9 @@ class FilterDepthImage(VTKPythonAlgorithmBase):
         self._renWin.GetZbufferData(ib[0], ib[1], ib[2], ib[3], vfa)
 
         # add noise
-        if self._noise:
+        if self._noise is not 0.0:
             nvfa = numpy_support.vtk_to_numpy(vfa)
-            nvfa += 0.002 * nvfa * np.random.normal(0.0, 1.0, nvfa.shape)
+            nvfa += self._noise * nvfa * np.random.normal(0.0, 1.0, nvfa.shape)
             vfa = dsa.numpyTovtkDataArray(nvfa)
 
         # pack the depth values into the output vtkImageData

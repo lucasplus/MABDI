@@ -25,8 +25,7 @@ class MabdiSimulate(object):
     def __init__(self,
                  mabdi_param=None,
                  sim_param=None,
-                 output=None,
-                 interactive=False):
+                 output=None):
         """
         Initialize all the vtkPythonAlgorithms that make up MABDI
         :param sim_param:

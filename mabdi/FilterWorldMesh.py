@@ -18,7 +18,18 @@ import logging
 
 
 class FilterWorldMesh(VTKPythonAlgorithmBase):
+    """
+    vtkAlgorithm with input vtkPolyData and output vtkPolyData
+    Input: Surface to be added to the global mesh
+    Output: The global mesh
+    """
     def __init__(self, color=False):
+        """
+        :param color: default=False
+          Color every new surface of the global mesh a different color.
+        :return:
+        """
+
         VTKPythonAlgorithmBase.__init__(self,
                                         nInputPorts=1, inputType='vtkPolyData',
                                         nOutputPorts=1, outputType='vtkPolyData')

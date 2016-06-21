@@ -15,10 +15,35 @@ import logging
 
 
 class FilterDepthImageToSurface(VTKPythonAlgorithmBase):
-    def __init__(self):
+    """
+    vtkAlgorithm with input of vtkImageData and output of vtkPolyData
+    This filter first defines a connectivity on the depth image that is like a
+    checkerboard but with two triangles in each square. It then throws away all points
+    farther than the param_farplane_threshold and all points with a large difference
+    between neighbors (controlled with param_convolution_theshold)
+    Input: Depth image
+    Output: Mesh created by projecting depth image
+    """
+
+    def __init__(self,
+                 param_farplane_threshold=1.0,
+                 param_convolution_theshold=0.01):
+        """
+        Algorithm setup and define parameters.
+        :param param_farplane_threshold: default=1.0
+          Values on the depth image range from 0.0-1.0. Points with depth values greater
+          than param_farplane_threshold will be thrown away.
+        :param param_convolution_theshold: default=0.01
+          Convolution is used to determine pixel neighbors with a large difference. If
+          there is one, the point will be thrown away. This threshold controls sensitivity.
+        """
+
         VTKPythonAlgorithmBase.__init__(self,
                                         nInputPorts=1, inputType='vtkImageData',
                                         nOutputPorts=1, outputType='vtkPolyData')
+
+        self._param_farplane_threshold = param_farplane_threshold
+        self.param_convolution_theshold = param_convolution_theshold
 
         self._sizex = []
         self._sizey = []
@@ -73,7 +98,7 @@ class FilterDepthImageToSurface(VTKPythonAlgorithmBase):
         """ Remove invalid points """
 
         # index to pts outside sensor range (defined by vtkCamera clipping range)
-        outside_range = ~(di < 1.0)
+        outside_range = ~(di < self._param_farplane_threshold)
 
         # find pixel neighbors with large differences in value
         # http://docs.scipy.org/doc/scipy/reference/tutorial/ndimage.html
@@ -81,12 +106,12 @@ class FilterDepthImageToSurface(VTKPythonAlgorithmBase):
         edges_h = abs(ndimage.convolve(di,
                                        kh,
                                        mode='nearest',
-                                       origin=-1)) > 0.01
+                                       origin=-1)) > self.param_convolution_theshold
         kv = np.array([[1, 0], [-1, 0]])
         edges_v = abs(ndimage.convolve(di,
                                        kv,
                                        mode='nearest',
-                                       origin=-1)) > 0.01
+                                       origin=-1)) > self.param_convolution_theshold
 
         # combine all the points found to be invalid
         # and set them to a value underneath the "floor of the environment"

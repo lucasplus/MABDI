@@ -12,10 +12,25 @@ import logging
 
 
 class FilterClassifier(VTKPythonAlgorithmBase):
-    def __init__(self):
+    """
+    vtkAlgorithm with 2 inputs of vtkImageData and an output of vtkImageData
+    Input: Depth images
+    Output: Classified depth image
+    """
+
+    def __init__(self, param_classifier_threshold=0.01):
+        """
+        :param param_classifier_threshold: default=0.01
+          Threshold to determine when the difference in the depth images is too big
+          and is therefore a novel measurement.
+        :return:
+        """
+
         VTKPythonAlgorithmBase.__init__(self,
                                         nInputPorts=2, inputType='vtkImageData',
                                         nOutputPorts=1, outputType='vtkImageData')
+
+        self._param_classifier_threshold = param_classifier_threshold
 
         self._postprocess = []
         self._postprocess_im1 = []
@@ -72,10 +87,10 @@ class FilterClassifier(VTKPythonAlgorithmBase):
         # difference in the images
         # im1 is assumed to be from the actual sensor
         # im2 is what we expect to see based on the world mesh
-        # Anywhere the difference is small through those measurements away
+        # Anywhere the difference is small, throw those measurements away
         # by setting them to one. By doing this FilterDepthImageToSurface
         # will assume they lie on the clipping plane and will remove them
-        difim = abs(im1 - im2) < 0.01
+        difim = abs(im1 - im2) < self._param_classifier_threshold
         if self._postprocess:
             self._postprocess_im1 = im1.copy()
             self._postprocess_im2 = im2.copy()
