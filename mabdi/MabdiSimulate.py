@@ -94,6 +94,9 @@ class MabdiSimulate(object):
         self.source.set_object_state(object_name='floor', state=True)
         self.source.Update()
 
+        self.source.bounds, self.source.position, self.source.lookat = \
+            self._find_bounds_and_observation_position_lookat(self.source)
+
         """ Sensor path """
 
         self.position, self.lookat = \
@@ -130,8 +133,8 @@ class MabdiSimulate(object):
         renScenario.AddActor(sourceAo.actor)
         renScenario.AddActor(surfAo.actor)
         renScenario.AddActor(meshAo.actor)
-        renScenario.GetActiveCamera().SetPosition(2.0, 7.0, 8.0)
-        renScenario.GetActiveCamera().SetFocalPoint(0.0, 1.0, 0.0)
+        renScenario.GetActiveCamera().SetPosition(self.source.position)
+        renScenario.GetActiveCamera().SetFocalPoint(self.source.lookat)
 
         # surf
         renSurf = vtk.vtkRenderer()
@@ -140,8 +143,8 @@ class MabdiSimulate(object):
         self._add_sensor_visualization(renSurf)
         renSurf.AddActor(sourceAo.actor)
         renSurf.AddActor(surfAo.actor)
-        renSurf.GetActiveCamera().SetPosition(2.0, 7.0, 8.0)
-        renSurf.GetActiveCamera().SetFocalPoint(0.0, 1.0, 0.0)
+        renSurf.GetActiveCamera().SetPosition(self.source.position)
+        renSurf.GetActiveCamera().SetFocalPoint(self.source.lookat)
 
         self.renWin.AddRenderer(renScenario)
         self.renWin.AddRenderer(renSurf)
@@ -149,6 +152,29 @@ class MabdiSimulate(object):
         self.iren.Initialize()
 
         return
+
+    @staticmethod
+    def _find_bounds_and_observation_position_lookat(vtk_algorithm):
+        bounds = []
+        if callable(vtk_algorithm.set_object_state):
+            vtk_algorithm.set_object_state(object_name='floor', state=False)
+            vtk_algorithm.Update()
+            bounds = vtk_algorithm.GetOutputDataObject(0).GetBounds()
+            vtk_algorithm.set_object_state(object_name='floor', state=True)
+            vtk_algorithm.Update()
+        else:
+            bounds = vtk_algorithm.GetOutputDataObject(0).GetBounds()
+
+        # all these values were found very empirically
+        padc = (3.0, 5.0, 8.0)  # pad coefficient
+        position = (padc[0] * bounds[1] + 4.0,
+                    padc[1] * bounds[3],
+                    padc[2] * bounds[5] * 2.0 + 3.0)
+        lookat = (-padc[0] * bounds[1],
+                  padc[1] * bounds[3] * -0.3,
+                  -padc[2] * bounds[5])
+
+        return bounds, position, lookat
 
     def _create_sensor_path(self, name=None, nsteps=None, bounds=None):
         """
@@ -211,6 +237,7 @@ class MabdiSimulate(object):
                               p0[1] + (p1[1] - p0[1]) * t,
                               p0[2] + (p1[2] - p0[2]) * t)).T
         elif path_param['name'] == 'helix':
+            # http://mathworld.wolfram.com/Helix.html
             x_radius = path_param['helix_x_diameter'] / 2
             z_radius = path_param['helix_z_diameter'] / 2
             nspins = path_param['helix_nspins']
@@ -300,7 +327,7 @@ class MabdiSimulate(object):
     def run(self):
         logging.info('running simulation')
 
-        # self.iren.Start()
+        self.iren.Start()
 
         if self._output['movie_preflight']:
             self._create_survey_movie()
