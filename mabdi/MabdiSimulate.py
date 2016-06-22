@@ -47,6 +47,8 @@ class MabdiSimulate(object):
         mabdi_param.setdefault('depth_image_size', (640, 480))
 
         sim_param = {} if not sim_param else sim_param
+        sim_param.setdefault('environment_name', 'table')
+        sim_param.setdefault('stanford_bunny_nbunnies', 1)
         sim_param.setdefault('path_name', 'helix_table_ub')
         sim_param.setdefault('path_nsteps', 20)
         sim_param.setdefault('noise', False)  # you can also specify a number instead of a bool
@@ -62,11 +64,15 @@ class MabdiSimulate(object):
         output.setdefault('postflight_nsteps', 30)
         output.setdefault('preflight_fps', 3)
         output.setdefault('postflight_fps', 3)
+        output.setdefault('path_flight', 'helix_survey_ub')
         self._output = output
 
         """ Filters and sources (this block is basically the core of MABDI) """
 
-        self.source = mabdi.SourceEnvironmentTable()
+        if sim_param['environment_name'] is 'table':
+            self.source = mabdi.SourceEnvironmentTable()
+        elif sim_param['environment_name'] is 'stanford_bunny':
+            self.source = mabdi.SourceStandfordBunny(sim_param['stanford_bunny_nbunnies'])
         self.di = mabdi.FilterDepthImage(offscreen=True,
                                          name='sensor',
                                          noise=sim_param['noise'],
@@ -229,6 +235,38 @@ class MabdiSimulate(object):
                                         'nsteps': nsteps,
                                         'line_start': (0.0, 0.1, 0.0),
                                         'line_end': (0.0, 0.3, 0.0)})
+        elif name == 'helix_bunny_ub':
+            if not nsteps: nsteps = 20
+            xd = b[1] - b[0]
+            zd = b[5] - b[4]
+            xd += 3.0
+            zd += 3.0
+            position = self._create_path({'name': 'helix',
+                                          'nsteps': nsteps,
+                                          'helix_nspins': 2,
+                                          'helix_x_diameter': xd + 3.0,
+                                          'helix_z_diameter': zd + 3.0,
+                                          'helix_y_start_end': (0.75, 1.00)})
+            lookat = self._create_path({'name': 'line',
+                                        'nsteps': nsteps,
+                                        'line_start': (0.0, 0.4, 0.0),
+                                        'line_end': (0.0, 0.6, 0.0)})
+        elif name == 'helix_survey_bunny_ub':
+            if not nsteps: nsteps = 20
+            xd = b[1] - b[0]
+            zd = b[5] - b[4]
+            xd += 3.0
+            zd += 3.0
+            position = self._create_path({'name': 'helix',
+                                          'nsteps': nsteps,
+                                          'helix_nspins': 1,
+                                          'helix_x_diameter': xd + 3.0,
+                                          'helix_z_diameter': zd + 3.5,
+                                          'helix_y_start_end': (0.75, 2.0)})
+            lookat = self._create_path({'name': 'line',
+                                        'nsteps': nsteps,
+                                        'line_start': (0.0, 0.1, 0.0),
+                                        'line_end': (0.0, 0.3, 0.0)})
 
         return position, lookat
 
@@ -379,15 +417,15 @@ class MabdiSimulate(object):
         cam = ren.GetActiveCamera()
 
         position, lookat = \
-            self._create_sensor_path(name='helix_survey_ub', nsteps=nsteps)
-
-        movie = mabdi.RenderWindowToAvi(renWin, self._file_prefix, fps=fps)
+            self._create_sensor_path(name=self._output['path_flight'], nsteps=nsteps)
 
         if survey_mesh:
             ren.AddActor(meshAo.actor)
             sourceAo.actor.GetProperty().SetOpacity(0.2)
             # sourceAo.actor.VisibilityOff()
 
+        # iren.Start()
+        movie = mabdi.RenderWindowToAvi(renWin, self._file_prefix, fps=fps)
         for i, (pos, lka) in enumerate(zip(position, lookat)):
             cam.SetPosition(pos)
             cam.SetFocalPoint(lka)
@@ -405,6 +443,7 @@ class MabdiSimulate(object):
         logging.info('running simulation')
 
         # self.iren.Start()
+
         if self._output['movie_preflight']:
             self._create_survey_movie(survey_source=True,
                                       survey_mesh=False,
@@ -459,8 +498,7 @@ class MabdiSimulate(object):
                                       survey_mesh=True,
                                       nsteps=self._output['postflight_nsteps'],
                                       fps=self._output['postflight_fps'])
-
-            mabdi.MovieNamesList.write_movie_list(self._file_prefix)
+            # mabdi.MovieNamesList.write_movie_list(self._file_prefix)
 
         """ Exit gracefully """
 

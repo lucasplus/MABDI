@@ -224,9 +224,11 @@ class PostProcess(object):
             plt.ylabel('number of elements')
             plt.grid(True)
 
-            for item in ([ax.title, ax.xaxis.label, ax.yaxis.label] +
-                         ax.get_xticklabels() + ax.get_yticklabels()):
-                item.set_fontsize(25)
+            for item in ([ax.title, ax.xaxis.label, ax.yaxis.label]):
+                item.set_fontsize(15)
+            for item in (ax.get_xticklabels() + ax.get_yticklabels()):
+                item.set_fontsize(10)
+            plt.ticklabel_format(style='sci', axis='y', scilimits=(0, 0))
 
         # adjust padding
         if self._movie['plots']:
@@ -256,9 +258,7 @@ class PostProcess(object):
 
                 end = timer()
                 logging.debug('Processed movie frame {} of {}, {} seconds'
-                              .format(i + 1,
-                                      len(self._ims_scenario),
-                                      end - start))
+                              .format(i + 1, len(self._ims_scenario), end - start))
 
         logging.info('Figure dpi {}, Figure pixel size {}'
                      .format(fig.dpi, fig.get_size_inches() * fig.dpi))
