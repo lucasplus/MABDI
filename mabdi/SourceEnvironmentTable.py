@@ -19,15 +19,17 @@ class SourceEnvironmentTable(VTKPythonAlgorithmBase):
         VTKPythonAlgorithmBase.__init__(self,
                                         nInputPorts=0,
                                         nOutputPorts=1, outputType='vtkPolyData')
-        self._floor = None
-        self._table = None
-        self._left_cup = None
-        self._right_cup = None
 
-        self._floor_flag = True
-        self._table_flag = True
-        self._left_cup_flag = True
-        self._right_cup_flag = True
+        self._objects = {'table': True,
+                         'left_cup': True,
+                         'right_cup': True}
+
+        self._polydata = {'table': None,
+                          'left_cup': None,
+                          'right_cup': None}
+
+        self._floor = True
+        self._floor_polydata = None
 
     def RequestData(self, request, inInfo, outInfo):
         logging.info('')
@@ -36,64 +38,64 @@ class SourceEnvironmentTable(VTKPythonAlgorithmBase):
         append = vtk.vtkAppendPolyData()
 
         # floor
-        if self._floor_flag:
-            self._floor = vtk.vtkCubeSource()
-            self._floor.SetCenter(0, .05, 0)
-            self._floor.SetXLength(10.0)
-            self._floor.SetYLength(0.1)
-            self._floor.SetZLength(10.0)
-            append.AddInputConnection(self._floor.GetOutputPort())
+        if self._floor:
+            self._floor_polydata = vtk.vtkCubeSource()
+            self._floor_polydata.SetCenter(0, .05, 0)
+            self._floor_polydata.SetXLength(10.0)
+            self._floor_polydata.SetYLength(0.1)
+            self._floor_polydata.SetZLength(10.0)
+            append.AddInputConnection(self._floor_polydata.GetOutputPort())
 
         # table
-        if self._table_flag:
+        if self._objects['table']:
             table_leg_1 = vtk.vtkCubeSource()
-            table_leg_1.SetCenter((1.0/2)-(.1/2), .75/2, (-.75/2)+(.1/2))
+            table_leg_1.SetCenter((1.0 / 2) - (.1 / 2), .75 / 2, (-.75 / 2) + (.1 / 2))
             table_leg_1.SetXLength(0.1)
             table_leg_1.SetYLength(0.75)
             table_leg_1.SetZLength(0.1)
             table_leg_2 = vtk.vtkCubeSource()
-            table_leg_2.SetCenter((-1.0/2)+(.1/2), .75/2, (-.75/2)+(.1/2))
+            table_leg_2.SetCenter((-1.0 / 2) + (.1 / 2), .75 / 2, (-.75 / 2) + (.1 / 2))
             table_leg_2.SetXLength(0.1)
             table_leg_2.SetYLength(0.75)
             table_leg_2.SetZLength(0.1)
             table_leg_3 = vtk.vtkCubeSource()
-            table_leg_3.SetCenter((-1.0/2)+(.1/2), .75/2, (.75/2)-(.1/2))
+            table_leg_3.SetCenter((-1.0 / 2) + (.1 / 2), .75 / 2, (.75 / 2) - (.1 / 2))
             table_leg_3.SetXLength(0.1)
             table_leg_3.SetYLength(0.75)
             table_leg_3.SetZLength(0.1)
             table_leg_4 = vtk.vtkCubeSource()
-            table_leg_4.SetCenter((1.0/2)-(.1/2), .75/2, (.75/2)-(.1/2))
+            table_leg_4.SetCenter((1.0 / 2) - (.1 / 2), .75 / 2, (.75 / 2) - (.1 / 2))
             table_leg_4.SetXLength(0.1)
             table_leg_4.SetYLength(0.75)
             table_leg_4.SetZLength(0.1)
             table_top = vtk.vtkCubeSource()
-            table_top.SetCenter(0.0, .75-(.1/2), 0.0)
+            table_top.SetCenter(0.0, .75 - (.1 / 2), 0.0)
             table_top.SetXLength(1.0)
             table_top.SetYLength(0.1)
             table_top.SetZLength(0.75)
-            self._table = vtk.vtkAppendPolyData()
-            self._table.AddInputConnection(table_leg_1.GetOutputPort())
-            self._table.AddInputConnection(table_leg_2.GetOutputPort())
-            self._table.AddInputConnection(table_leg_3.GetOutputPort())
-            self._table.AddInputConnection(table_leg_4.GetOutputPort())
-            self._table.AddInputConnection(table_top.GetOutputPort())
-            append.AddInputConnection(self._table.GetOutputPort())
+            self._polydata['table'] = vtk.vtkAppendPolyData()
+            self._polydata['table'].AddInputConnection(table_leg_1.GetOutputPort())
+            self._polydata['table'].AddInputConnection(table_leg_2.GetOutputPort())
+            self._polydata['table'].AddInputConnection(table_leg_3.GetOutputPort())
+            self._polydata['table'].AddInputConnection(table_leg_4.GetOutputPort())
+            self._polydata['table'].AddInputConnection(table_top.GetOutputPort())
+            append.AddInputConnection(self._polydata['table'].GetOutputPort())
 
         # left cup
-        if self._left_cup_flag:
-            self._left_cup = vtk.vtkCylinderSource()
-            self._left_cup.SetCenter(-.75/4, .75+(.12/2), 0.0)
-            self._left_cup.SetHeight(.12)
-            self._left_cup.SetRadius(.06/2)
-            append.AddInputConnection(self._left_cup.GetOutputPort())
+        if self._objects['left_cup']:
+            self._polydata['left_cup'] = vtk.vtkCylinderSource()
+            self._polydata['left_cup'].SetCenter(-.75 / 4, .75 + (.12 / 2), 0.0)
+            self._polydata['left_cup'].SetHeight(.12)
+            self._polydata['left_cup'].SetRadius(.06 / 2)
+            append.AddInputConnection(self._polydata['left_cup'].GetOutputPort())
 
         # right cup
-        if self._right_cup_flag:
-            self._right_cup = vtk.vtkCylinderSource()
-            self._right_cup.SetCenter(.75/4, .75+(.12/2), 0.0)
-            self._right_cup.SetHeight(.12)
-            self._right_cup.SetRadius(.06/2)
-            append.AddInputConnection(self._right_cup.GetOutputPort())
+        if self._objects['right_cup']:
+            self._polydata['right_cup'] = vtk.vtkCylinderSource()
+            self._polydata['right_cup'].SetCenter(.75 / 4, .75 + (.12 / 2), 0.0)
+            self._polydata['right_cup'].SetHeight(.12)
+            self._polydata['right_cup'].SetRadius(.06 / 2)
+            append.AddInputConnection(self._polydata['right_cup'].GetOutputPort())
 
         append.Update()
 
@@ -117,15 +119,10 @@ class SourceEnvironmentTable(VTKPythonAlgorithmBase):
             return 1
 
         if object_name == 'floor':
-            self._floor_flag = state
-        elif object_name == 'table':
-            self._table_flag = state
-        elif object_name == 'left_cup':
-            self._left_cup_flag = state
-        elif object_name == 'right_cup':
-            self._right_cup_flag = state
+            self._floor = state
+        elif object_name in self._objects:
+            self._objects[object_name] = state
         else:
             return 1
 
         self.Modified()
-

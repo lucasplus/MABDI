@@ -7,9 +7,10 @@ logging.basicConfig(level=logging.DEBUG,
 
 sim = mabdi.MabdiSimulate(
     mabdi_param={'depth_image_size': (320, 240)},
-    sim_param={'path_name': 'circle',
-               'path_length': 10,
+    sim_param={'path_name': 'helix_table_ub',
+               'path_nsteps': 10,
                'interactive': False},
-    output={'movie': True})
+    output={'movie': True,
+            'movie_preflight': True})
 
 sim.run()

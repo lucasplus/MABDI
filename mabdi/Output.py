@@ -14,10 +14,23 @@ from timeit import default_timer as timer
 import logging
 
 
+class RenderWindowToAvi(object):
+    def __init__(self, render_window):
+        self._render_window = render_window
+
+    def start(self):
+        return
+
+    def end(self):
+        return
+
+
 class PostProcess(object):
     """
     Handle creating movies and figures
     """
+
+    movie_name = []
 
     def __init__(self, movie=None,
                  scenario_render_window=None,
@@ -39,7 +52,8 @@ class PostProcess(object):
         """
 
         # we will use this for any file we save
-        self._file_prefix = file_prefix
+        self._movie_name = file_prefix + "movie.mp4"
+        PostProcess.movie_name = self._movie_name
 
         if length_of_path:
             self._np = length_of_path
@@ -157,7 +171,7 @@ class PostProcess(object):
             pad = 0.0
         plt.tight_layout(pad=pad, h_pad=0.0, w_pad=0.0)
 
-        with self._writer.saving(fig, self._file_prefix + "movie.mp4", 100):
+        with self._writer.saving(fig, self._movie_name, 100):
             for i, (im_s, im_d) in enumerate(zip(self._ims_scenario, self._ims_d_images)):
                 start = timer()
 

@@ -41,8 +41,11 @@ class FilterDepthImage(VTKPythonAlgorithmBase):
                                         nOutputPorts=1, outputType='vtkImageData')
         self._name = name
 
-        if not noise:
-            noise = 0.0
+        if type(noise) == bool:
+            if noise:
+                noise = 0.002
+            else:
+                noise = 0.0
         self._noise = noise
 
         # vtk render objects
