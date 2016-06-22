@@ -2,6 +2,7 @@
 from MabdiSimulate import MabdiSimulate
 
 from SourceEnvironmentTable import SourceEnvironmentTable
+from SourceStanfordBunny import SourceStandfordBunny
 from FilterDepthImage import FilterDepthImage
 from FilterClassifier import FilterClassifier
 from FilterDepthImageToSurface import FilterDepthImageToSurface
