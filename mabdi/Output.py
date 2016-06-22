@@ -14,23 +14,58 @@ from timeit import default_timer as timer
 import logging
 
 
+class MovieNamesList(object):
+    movie_names = []
+
+
 class RenderWindowToAvi(object):
-    def __init__(self, render_window):
+    ntimes = 0
+
+    def __init__(self, render_window, file_prefix, fps=2):
+
+        self._movie_name = file_prefix + \
+                           'movie_' + str(RenderWindowToAvi.ntimes) + '.mp4'
+        MovieNamesList.movie_names.append(self._movie_name)
+        RenderWindowToAvi.ntimes += 1
+
         self._render_window = render_window
+        render_window.AddObserver('RenderEvent', self._render_cb)
 
-    def start(self):
-        return
+        self._ims = []
 
-    def end(self):
-        return
+        try:
+            ffmpegwriter = animation.writers['ffmpeg']
+        except KeyError:
+            logging.critical('ffmpeg not found, please install')
+            raise
+        self._writer = ffmpegwriter(fps=fps)
+
+    def _render_cb(self, obj, env):
+        im = get_image_from_render_window(vtk_render_window=self._render_window)
+        self._ims.append(im)
+
+    def save_movie(self):
+        logging.info('Number of frames {}'.format(len(self._ims)))
+
+        fig = plt.figure(frameon=False, figsize=(20, 10), dpi=100)
+        ax = plt.imshow(self._ims[0], origin='lower', interpolation='none')
+        plt.axis('off', frameon=False)
+        plt.tight_layout(pad=0.0, h_pad=0.0, w_pad=0.0)
+
+        with self._writer.saving(fig, self._movie_name, 100):
+            for i, im in enumerate(self._ims):
+                start = timer()
+                ax.set_data(im)
+                self._writer.grab_frame()
+                end = timer()
+                logging.debug('Processed movie frame {} of {}, {} seconds'
+                              .format(i + 1, len(self._ims), end - start))
 
 
 class PostProcess(object):
     """
     Handle creating movies and figures
     """
-
-    movie_name = []
 
     def __init__(self, movie=None,
                  scenario_render_window=None,
@@ -52,8 +87,8 @@ class PostProcess(object):
         """
 
         # we will use this for any file we save
-        self._movie_name = file_prefix + "movie.mp4"
-        PostProcess.movie_name = self._movie_name
+        self._movie_name = file_prefix + 'pp_movie.mp4'
+        MovieNamesList.movie_names.append(self._movie_name)
 
         if length_of_path:
             self._np = length_of_path
@@ -104,9 +139,7 @@ class PostProcess(object):
 
         # scenario - get the image from the renderer
         if self._movie['scenario']:
-            inp = self._get_scenario_image()
-            dim = inp.GetDimensions()
-            im = numpy_support.vtk_to_numpy(inp.GetPointData().GetScalars()).reshape(dim[1], dim[0], 3)
+            im = get_image_from_render_window(vtk_render_window=self._vtk_render_window)
             self._ims_scenario.append(im)
 
         # depth images
@@ -201,8 +234,16 @@ class PostProcess(object):
 
         del self._ims_scenario, self._ims_d_images
 
-    def _get_scenario_image(self):
-        window_to_image_filter = vtk.vtkWindowToImageFilter()
-        window_to_image_filter.SetInput(self._vtk_render_window)
-        window_to_image_filter.Update()
-        return window_to_image_filter.GetOutput()
+
+def get_image_from_render_window(vtk_render_window):
+    """
+    Get a screenshot of the given vtkRenderWindow in the form a numpy array
+    :param vtk_render_window: The render window
+    :return: numpy array of size (width, height, 3)
+    """
+    window_to_image_filter = vtk.vtkWindowToImageFilter()
+    window_to_image_filter.SetInput(vtk_render_window)
+    window_to_image_filter.Update()
+    vtkim = window_to_image_filter.GetOutput()
+    dim = vtkim.GetDimensions()
+    return numpy_support.vtk_to_numpy(vtkim.GetPointData().GetScalars()).reshape(dim[1], dim[0], 3)

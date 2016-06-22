@@ -180,8 +180,9 @@ class MabdiSimulate(object):
         """
         Create specific sensor paths as specified by path_name, Path names
         ending in "_ub" use the given bounds when calculating the path.
-        :param path_name: Name of specific path
-        :param source_bounds: Bounds of thing to create a path around
+        :param name: Name of specific path
+        :param name: Name of steps, although each path will define a default
+        :param bounds: Bounds of thing to create a path around
         :return:
         """
 
@@ -201,15 +202,16 @@ class MabdiSimulate(object):
                                           'helix_nspins': 2,
                                           'helix_x_diameter': xd,
                                           'helix_z_diameter': zd,
-                                          'helix_y_start_end': (0.5, 1.5)})
+                                          'helix_y_start_end': (0.75, 1.25)})
             lookat = self._create_path({'name': 'line',
                                         'nsteps': nsteps,
-                                        'line_start': (0.0, 0.75, 0.0),
-                                        'line_end': (0.0, 1.25, 0.0)})
+                                        'line_start': (0.0, 0.9, 0.0),
+                                        'line_end': (0.0, 1.1, 0.0)})
 
         return position, lookat
 
-    def _create_path(self, path_param=None):
+    @staticmethod
+    def _create_path(path_param=None):
         """
         (nsteps, 3) = path.shape
         :param path_param: dictionary of parameters that describe the desired path
@@ -314,20 +316,53 @@ class MabdiSimulate(object):
     def _create_survey_movie(self):
         """
         Note: This method assumes the source is centered on the xz plane
-        :return:
         """
 
-        # first find bounds of the source
-        # self.source_bounds  # (xmin, xmax, ymin, ymax, zmin, zmax)
+        sourceAo = mabdi.VTKPolyDataActorObjects(self.source)
+        sourceAo.actor.GetProperty().SetColor(slate_grey_light)
+        sourceAo.actor.GetProperty().SetSpecularColor(1, 1, 1)
+        sourceAo.actor.GetProperty().SetSpecular(0.3)
+        sourceAo.actor.GetProperty().SetSpecularPower(20)
+        sourceAo.actor.GetProperty().SetAmbient(0.2)
+        sourceAo.actor.GetProperty().SetDiffuse(0.8)
+        # sourceAo.actor.GetProperty().SetOpacity(0.2)
 
-        # now find the major axis between x and z
+        # meshAo = mabdi.VTKPolyDataActorObjects(self.mesh)
+        # meshAo.actor.GetProperty().SetColor(salmon)
+        # meshAo.actor.GetProperty().SetOpacity(0.5)
+
+        renWin = vtk.vtkRenderWindow()
+        renWin.SetSize(640, 480)
+        iren = vtk.vtkRenderWindowInteractor()
+        iren.SetRenderWindow(renWin)
+
+        ren = vtk.vtkRenderer()
+        ren.SetBackground(eggshell)
+        ren.AddActor(sourceAo.actor)
+        # ren.AddActor(meshAo.actor)
+        renWin.AddRenderer(ren)
+
+        iren.Initialize()
+
+        cam = ren.GetActiveCamera()
+
+        position, lookat = \
+            self._create_sensor_path(name='helix_table_ub', nsteps=40)
+
+        movie = mabdi.RenderWindowToAvi(renWin, self._file_prefix, fps=5)
+        for i, (pos, lka) in enumerate(zip(position, lookat)):
+            cam.SetPosition(pos)
+            cam.SetFocalPoint(lka)
+            iren.Render()
+
+        movie.save_movie()
 
         return
 
     def run(self):
         logging.info('running simulation')
 
-        self.iren.Start()
+        # self.iren.Start()
 
         if self._output['movie_preflight']:
             self._create_survey_movie()
