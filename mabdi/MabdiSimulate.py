@@ -365,7 +365,8 @@ class MabdiSimulate(object):
         # self.iren.Start()
 
         if self._output['movie_preflight']:
-            self._create_survey_movie()
+            print 'ok'
+            # self._create_survey_movie()
 
         if self._output['movie']:
             pp = mabdi.PostProcess(

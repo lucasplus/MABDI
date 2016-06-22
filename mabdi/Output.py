@@ -168,15 +168,22 @@ class PostProcess(object):
 
         axs, rn = [], 0  # list of axes, row number
         if self._movie['scenario']:
-            axs.append(plt.subplot2grid((fnr, 3), (rn, 0), colspan=3))
-            axs[-1].axis('off', frameon=False)
+            handle = plt.subplot2grid((fnr, 3), (rn, 0), colspan=3)
+            handle.axis('off', frameon=False)
+            tmp = handle.imshow(self._ims_scenario[0], origin='lower', interpolation='none')
+            axs.append(tmp)
         if self._movie['depth_images']:
             rn += 1
-            axs.append(plt.subplot2grid((fnr, 3), (rn, 0)))
-            axs.append(plt.subplot2grid((fnr, 3), (rn, 1)))
-            axs.append(plt.subplot2grid((fnr, 3), (rn, 2)))
-            for ax in (axs[-1], axs[-2], axs[-3]):
-                ax.axis('off', frameon=False)
+            handle = [plt.subplot2grid((fnr, 3), (rn, 0)),
+                      plt.subplot2grid((fnr, 3), (rn, 1)),
+                      plt.subplot2grid((fnr, 3), (rn, 2))]
+            for i, hand in enumerate(handle):
+                hand.axis('off', frameon=False)
+                if i is not 2:
+                    tmp = hand.imshow(self._ims_d_images[0][i], origin='lower', interpolation='none')
+                else:
+                    tmp = hand.imshow(self._ims_d_images[0][i], origin='lower', interpolation='none', cmap='Greys_r')
+                axs.append(tmp)
         if self._movie['plots']:
             rn += 1
             axs.append(plt.subplot2grid((fnr, 3), (rn, 0)))
@@ -194,7 +201,7 @@ class PostProcess(object):
             plt.grid(True)
 
             for item in ([ax.title, ax.xaxis.label, ax.yaxis.label] +
-                             ax.get_xticklabels() + ax.get_yticklabels()):
+                         ax.get_xticklabels() + ax.get_yticklabels()):
                 item.set_fontsize(25)
 
         # adjust padding
@@ -210,14 +217,14 @@ class PostProcess(object):
 
                 axscy = cycle(axs)
                 if self._movie['scenario']:
-                    axscy.next().imshow(im_s, origin='lower', interpolation='none')
+                    axscy.next().set_data(im_s)
                 if self._movie['depth_images']:
-                    axscy.next().imshow(im_d[0], origin='lower', interpolation='none')
-                    axscy.next().imshow(im_d[1], origin='lower', interpolation='none')
-                    axscy.next().imshow(im_d[2], origin='lower', interpolation='none', cmap='Greys_r')
+                    axscy.next().set_data(im_d[0])
+                    axscy.next().set_data(im_d[1])
+                    axscy.next().set_data(im_d[2])
                 if self._movie['plots']:
-                    axscy.next().plot(np.arange(1, i+1+1),
-                                      np.array(self._global_mesh_nc[0:i+1]),
+                    axscy.next().plot(np.arange(1, i + 1 + 1),
+                                      np.array(self._global_mesh_nc[0:i + 1]),
                                       '-*', color='b',
                                       markersize=10, markerfacecolor='g')
 
