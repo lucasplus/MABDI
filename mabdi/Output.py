@@ -1,4 +1,5 @@
 import sys
+import ntpath
 
 from itertools import cycle
 
@@ -17,6 +18,25 @@ import logging
 class MovieNamesList(object):
     movie_names = []
 
+    @staticmethod
+    def write_movie_list(file_prefix):
+        logging.info('Writing txt files with all movies that were made.')
+
+        filename = file_prefix + 'movie_name_list.txt'
+        filenamebn = ntpath.basename(filename)
+        myfile = open(filename, 'w')
+
+        for name in MovieNamesList.movie_names:
+            basename = ntpath.basename(name)
+            myfile.write('file ' + '\'' + basename + '\'' + '\n')
+
+        myfile.write('\n')
+        myfile.write('Command: \n')
+        video_name = ntpath.basename(file_prefix) + 'movies_combined.avi'
+        myfile.write('ffmpeg -f concat -i ' + filenamebn + ' -c copy ' + video_name)
+
+        myfile.close()
+
 
 class RenderWindowToAvi(object):
     ntimes = 0
@@ -24,7 +44,7 @@ class RenderWindowToAvi(object):
     def __init__(self, render_window, file_prefix, fps=2):
 
         self._movie_name = file_prefix + \
-                           'movie_' + str(RenderWindowToAvi.ntimes) + '.mp4'
+                           'movie_' + str(RenderWindowToAvi.ntimes) + '.avi'
         MovieNamesList.movie_names.append(self._movie_name)
         RenderWindowToAvi.ntimes += 1
 
@@ -47,7 +67,7 @@ class RenderWindowToAvi(object):
     def save_movie(self):
         logging.info('Number of frames {}'.format(len(self._ims)))
 
-        fig = plt.figure(frameon=False, figsize=(20, 10), dpi=100)
+        fig = plt.figure(frameon=False, figsize=(40, 20), dpi=100)
         ax = plt.imshow(self._ims[0], origin='lower', interpolation='none')
         plt.axis('off', frameon=False)
         plt.tight_layout(pad=0.0, h_pad=0.0, w_pad=0.0)
@@ -87,7 +107,7 @@ class PostProcess(object):
         """
 
         # we will use this for any file we save
-        self._movie_name = file_prefix + 'pp_movie.mp4'
+        self._movie_name = file_prefix + 'pp_movie.avi'
         MovieNamesList.movie_names.append(self._movie_name)
 
         if length_of_path:
@@ -180,9 +200,9 @@ class PostProcess(object):
             for i, hand in enumerate(handle):
                 hand.axis('off', frameon=False)
                 if i is not 2:
-                    tmp = hand.imshow(self._ims_d_images[0][i], origin='lower', interpolation='none')
+                    tmp = hand.imshow(self._ims_d_images[1][i], origin='lower', interpolation='none')
                 else:
-                    tmp = hand.imshow(self._ims_d_images[0][i], origin='lower', interpolation='none', cmap='Greys_r')
+                    tmp = hand.imshow(self._ims_d_images[1][i], origin='lower', interpolation='none', cmap='Greys_r')
                 axs.append(tmp)
         if self._movie['plots']:
             rn += 1

@@ -205,8 +205,24 @@ class MabdiSimulate(object):
                                           'helix_y_start_end': (0.75, 1.25)})
             lookat = self._create_path({'name': 'line',
                                         'nsteps': nsteps,
-                                        'line_start': (0.0, 0.9, 0.0),
-                                        'line_end': (0.0, 1.1, 0.0)})
+                                        'line_start': (0.0, 0.4, 0.0),
+                                        'line_end': (0.0, 0.6, 0.0)})
+        elif name == 'helix_survey_ub':
+            if not nsteps: nsteps = 20
+            xd = b[1] - b[0]
+            zd = b[5] - b[4]
+            xd += 3.0
+            zd += 3.0
+            position = self._create_path({'name': 'helix',
+                                          'nsteps': nsteps,
+                                          'helix_nspins': 1,
+                                          'helix_x_diameter': xd,
+                                          'helix_z_diameter': zd + 0.5,
+                                          'helix_y_start_end': (0.75, 1.5)})
+            lookat = self._create_path({'name': 'line',
+                                        'nsteps': nsteps,
+                                        'line_start': (0.0, 0.1, 0.0),
+                                        'line_end': (0.0, 0.3, 0.0)})
 
         return position, lookat
 
@@ -312,8 +328,8 @@ class MabdiSimulate(object):
         vtk_renderer.AddActor(cameraActor)
         vtk_renderer.AddActor(actor)
 
-    # def _create_survey_movie(self, survey_source=True, survey_mesh=False):
-    def _create_survey_movie(self):
+    def _create_survey_movie(self, survey_source=True, survey_mesh=False):
+    #def _create_survey_movie(self):
         """
         Note: This method assumes the source is centered on the xz plane
         """
@@ -327,8 +343,14 @@ class MabdiSimulate(object):
         sourceAo.actor.GetProperty().SetDiffuse(0.8)
         # sourceAo.actor.GetProperty().SetOpacity(0.2)
 
-        # meshAo = mabdi.VTKPolyDataActorObjects(self.mesh)
-        # meshAo.actor.GetProperty().SetColor(salmon)
+        meshAo = mabdi.VTKPolyDataActorObjects(self.mesh)
+        meshAo.actor.GetProperty().SetColor(salmon)
+        meshAo.actor.GetProperty().SetColor(slate_grey_light)
+        meshAo.actor.GetProperty().SetSpecularColor(1, 1, 1)
+        meshAo.actor.GetProperty().SetSpecular(0.3)
+        meshAo.actor.GetProperty().SetSpecularPower(20)
+        meshAo.actor.GetProperty().SetAmbient(0.2)
+        meshAo.actor.GetProperty().SetDiffuse(0.8)
         # meshAo.actor.GetProperty().SetOpacity(0.5)
 
         renWin = vtk.vtkRenderWindow()
@@ -338,8 +360,9 @@ class MabdiSimulate(object):
 
         ren = vtk.vtkRenderer()
         ren.SetBackground(eggshell)
+
         ren.AddActor(sourceAo.actor)
-        # ren.AddActor(meshAo.actor)
+
         renWin.AddRenderer(ren)
 
         iren.Initialize()
@@ -347,15 +370,25 @@ class MabdiSimulate(object):
         cam = ren.GetActiveCamera()
 
         position, lookat = \
-            self._create_sensor_path(name='helix_table_ub', nsteps=40)
+            self._create_sensor_path(name='helix_survey_ub', nsteps=3)
 
-        movie = mabdi.RenderWindowToAvi(renWin, self._file_prefix, fps=5)
+        movie = mabdi.RenderWindowToAvi(renWin, self._file_prefix, fps=30)
+
+        if survey_mesh:
+            ren.AddActor(meshAo.actor)
+            sourceAo.actor.GetProperty().SetOpacity(0.2)
+            # sourceAo.actor.VisibilityOff()
+
         for i, (pos, lka) in enumerate(zip(position, lookat)):
             cam.SetPosition(pos)
             cam.SetFocalPoint(lka)
             iren.Render()
 
         movie.save_movie()
+
+        iren.GetRenderWindow().Finalize()
+        iren.TerminateApp()
+        del iren, ren, renWin
 
         return
 
@@ -365,14 +398,14 @@ class MabdiSimulate(object):
         # self.iren.Start()
 
         if self._output['movie_preflight']:
-            print 'ok'
-            # self._create_survey_movie()
+            self._create_survey_movie(survey_source=True, survey_mesh=False)
 
         if self._output['movie']:
             pp = mabdi.PostProcess(
                 movie={'scenario': True,
                        'depth_images': True,
-                       'plots': True},
+                       'plots': True,
+                       'param_fps': 30},
                 scenario_render_window=self.renWin,
                 filter_classifier=self.classifier,
                 length_of_path=len(self.position),
@@ -409,6 +442,10 @@ class MabdiSimulate(object):
 
         if self._output['movie']:
             pp.save_movie()
+
+        if self._output['movie_postflight']:
+            self._create_survey_movie(survey_source=True, survey_mesh=True)
+            mabdi.MovieNamesList.write_movie_list(self._file_prefix)
 
         """ Exit gracefully """
 
