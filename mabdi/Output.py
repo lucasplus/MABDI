@@ -180,15 +180,18 @@ class PostProcess(object):
         # http://matplotlib.org/examples/animation/moviewriter.html
 
         # figure number of rows
-        fnr = sum((self._movie['scenario'],
-                   self._movie['depth_images'],
-                   self._movie['plots']))
+        # fnr = sum((self._movie['scenario'],  # to go back to old layout uncomment
+        #            self._movie['depth_images'],
+        #            self._movie['plots']))
+        fnr = sum((self._movie['scenario'],  # to go back to old layout uncomment
+                   self._movie['depth_images']))
 
         fig = plt.figure(frameon=False, figsize=(40, 10 * fnr), dpi=100)
 
         axs, rn = [], 0  # list of axes, row number
         if self._movie['scenario']:
-            handle = plt.subplot2grid((fnr, 3), (rn, 0), colspan=3)
+            # handle = plt.subplot2grid((fnr, 3), (rn, 0), colspan=3)  # to go back to old layout uncomment
+            handle = plt.subplot2grid((fnr, 3), (rn, 0), colspan=2)
             handle.axis('off', frameon=False)
             tmp = handle.imshow(self._ims_scenario[0], origin='lower', interpolation='none')
             axs.append(tmp)
@@ -206,7 +209,8 @@ class PostProcess(object):
                 axs.append(tmp)
         if self._movie['plots']:
             rn += 1
-            axs.append(plt.subplot2grid((fnr, 3), (rn, 0)))
+            # axs.append(plt.subplot2grid((fnr, 3), (rn, 0)))  # to go back to old layout uncomment
+            axs.append(plt.subplot2grid((fnr, 3), (0, 2)))
             ax = axs[-1]
 
             ax.plot(np.arange(1, len(self._global_mesh_nc)+1), np.array(self._global_mesh_nc))
