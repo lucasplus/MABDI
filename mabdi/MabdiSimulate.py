@@ -46,7 +46,8 @@ class MabdiSimulate(object):
         sim_param = {} if not sim_param else sim_param
         sim_param.setdefault('environment_name', 'table')
         sim_param.setdefault('stanford_bunny_nbunnies', 1)
-        sim_param.setdefault('dynamic_environment', None)
+        sim_param.setdefault('dynamic_environment', [(-1, -1)])  # values that won't do anything, (frame_number, object_id)
+        sim_param.setdefault('dynamic_environment_init_state', None)
         sim_param.setdefault('path_name', 'helix_table_ub')
         sim_param.setdefault('path_nsteps', 20)
         sim_param.setdefault('noise', False)  # you can also specify a number instead of a bool
@@ -57,6 +58,7 @@ class MabdiSimulate(object):
         output.setdefault('folder_name', None)
         output.setdefault('movie', False)
         output.setdefault('movie_fps', 3)
+        output.setdefault('movie_savefig_at_frame', ())
         output.setdefault('source_obs_position', None)
         output.setdefault('source_obs_lookat', None)
         output.setdefault('movie_preflight', False)
@@ -115,7 +117,7 @@ class MabdiSimulate(object):
         self.position, self.lookat = \
             self._create_sensor_path(name=sim_param['path_name'],
                                      nsteps=sim_param['path_nsteps'],
-                                     bounds=self.source_bounds)
+                                     bounds=self.source.bounds)
 
         """ Actor objects """
 
@@ -170,10 +172,10 @@ class MabdiSimulate(object):
     def _find_bounds_and_observation_position_lookat(vtk_algorithm):
         bounds = []
         if callable(vtk_algorithm.set_object_state):
-            vtk_algorithm.set_object_state(object_name='floor', state=False)
+            vtk_algorithm.set_object_state(object_id='floor', state=False)
             vtk_algorithm.Update()
             bounds = vtk_algorithm.GetOutputDataObject(0).GetBounds()
-            vtk_algorithm.set_object_state(object_name='floor', state=True)
+            vtk_algorithm.set_object_state(object_id='floor', state=True)
             vtk_algorithm.Update()
         else:
             bounds = vtk_algorithm.GetOutputDataObject(0).GetBounds()
@@ -461,15 +463,30 @@ class MabdiSimulate(object):
                 filter_classifier=self.classifier,
                 length_of_path=len(self.position),
                 global_mesh=self.mesh,
-                file_prefix=self._file_prefix)
+                file_prefix=self._file_prefix,
+                savefig_at_frame=self._output['movie_savefig_at_frame'])
 
-        de = self._sim_param['dynamic_environment']
+        # if a dynamic environment, set the initial state
+        deintst = self._sim_param['dynamic_environment_init_state']
+        if deintst:
+            for i, obj_state in enumerate(deintst):
+                self.source.set_object_state(object_id=i, state=obj_state)
+            self.source.Update()
+        # dynamic environment controls
+        de = self._sim_param['dynamic_environment']  # dynamic environment
+        defn, deobjn = zip(*de)  # frame number, objnumber
+
         for i, (pos, lka) in enumerate(zip(self.position, self.lookat)):
             logging.debug('START MAIN LOOP')
             start = timer()
 
             self.di.set_sensor_orientation(pos, lka)
             self.sdi.set_sensor_orientation(pos, lka)
+
+            if i in defn:
+                ind = defn.index(i)
+                self.source.set_object_state(object_id=deobjn[ind], state=True)
+                self.source.Update()
 
             logging.debug('di.Modified()')
             self.di.Modified()

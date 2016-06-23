@@ -99,20 +99,20 @@ class SourceStandfordBunny(VTKPythonAlgorithmBase):
 
         return 1
 
-    def set_object_state(self, object_name='default', state='default'):
+    def set_object_state(self, object_id='default', state='default'):
         """
         Add or remove objects from the environment.
-        :param object_name: Name of object to change the state of.
+        :param object_id: Name of object to change the state of.
         :param state: Have the object in the environment?
         """
-        if state == 'default' or object_name == 'default':
+        if state == 'default' or object_id == 'default':
             return 1
 
-        if object_name == 'floor':
+        if object_id == 'floor':
             self._floor = state
-        elif object_name in self.objects:
-            self.objects[object_name] = state
-        else:
-            return 1
+            self.Modified()
+            return
 
+        keys = self.objects.keys()
+        self.objects[keys[object_id]] = state
         self.Modified()

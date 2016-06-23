@@ -7,26 +7,32 @@ logging.basicConfig(level=logging.DEBUG,
 
 qc = 1.0  # 1.0 for quick run, 10 for long run
 
+nsteps = 30
+fps = int(nsteps/10)
+
 sim = mabdi.MabdiSimulate(
     mabdi_param={'depth_image_size': (640, 480),
                  'farplane_threshold': 0.99},
     sim_param={'environment_name': 'stanford_bunny',
                'stanford_bunny_nbunnies': 3,
+               'dynamic_environment': [(int(round(nsteps*0.5)) - 1, 1)],
+               'dynamic_environment_init_state': (True, False, True),
                'path_name': 'helix_bunny_ub',
-               'path_nsteps': qc * 30,
+               'path_nsteps': nsteps,
                'noise': True,
                'interactive': False},
     output={'folder_name': 'env_3bunny_noise_true',
             'movie': True,
-            'movie_fps': 3,
+            'movie_fps': fps,
+            'movie_savefig_at_frame': (3, 30),
             'source_obs_position': (7.0, 3.0, 11.0),
             'source_obs_lookat': (-5.0, -1.4, -8.0),
-            'movie_preflight': False,
+            'movie_preflight': True,
             'movie_postflight': True,
-            'preflight_nsteps': qc * 30,
-            'postflight_nsteps': qc * 30,
-            'preflight_fps': qc * 3,
-            'postflight_fps': qc * 3,
+            'preflight_nsteps': nsteps,
+            'postflight_nsteps': nsteps,
+            'preflight_fps': fps,
+            'postflight_fps': fps,
             'path_flight': 'helix_survey_bunny_ub'})
 
 sim.run()

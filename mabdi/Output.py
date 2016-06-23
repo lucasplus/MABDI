@@ -92,7 +92,8 @@ class PostProcess(object):
                  filter_classifier=None,
                  length_of_path=None,
                  global_mesh=None,
-                 file_prefix=None):
+                 file_prefix=None,
+                 savefig_at_frame=()):
         """
         Create movies, plots, and stats of the MABDI execution
         :param scenario_render_window: vtkRenderWindow where the scenario view is rendered
@@ -108,7 +109,7 @@ class PostProcess(object):
 
         # we will use this for any file we save
         self._file_prefix = file_prefix
-        self._movie_name = file_prefix + 'pp_movie.avi'
+        self._movie_name = file_prefix + 'dashboard_movie.avi'
         MovieNamesList.movie_names.append(self._movie_name)
 
         if length_of_path:
@@ -153,6 +154,8 @@ class PostProcess(object):
             logging.critical('ffmpeg not found, please install')
             raise
         self._writer = ffmpegwriter(fps=movie['param_fps'])
+
+        self._savefig_at_frame = savefig_at_frame
 
     def collect_info(self):
         logging.info('')
@@ -256,6 +259,9 @@ class PostProcess(object):
                                       markersize=5, markerfacecolor='g')
 
                 self._writer.grab_frame()
+
+                if i in self._savefig_at_frame:
+                    plt.savefig(self._file_prefix + 'dashboard_plot_' + str(i) + '.png')
 
                 end = timer()
                 logging.debug('Processed movie frame {} of {}, {} seconds'
