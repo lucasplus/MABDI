@@ -81,6 +81,8 @@ class RenderWindowToAvi(object):
                 logging.debug('Processed movie frame {} of {}, {} seconds'
                               .format(i + 1, len(self._ims), end - start))
 
+        del self._ims
+
 
 class PostProcess(object):
     """
