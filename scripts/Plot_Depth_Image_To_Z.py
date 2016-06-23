@@ -12,6 +12,7 @@ def vtkmatrix_to_numpy(matrix):
             m[i, j] = matrix.GetElement(i, j)
     return m
 
+
 # create a rendering window and renderer
 ren = vtk.vtkRenderer()
 renWin = vtk.vtkRenderWindow()
@@ -53,8 +54,8 @@ iren.Initialize()
 iren.Render()
 
 vtktmat = cam.GetCompositeProjectionTransformMatrix(
-            ren.GetTiledAspectRatio(),
-            0.0, 1.0)
+    ren.GetTiledAspectRatio(),
+    0.0, 1.0)
 vtktmat.Invert()
 tmat = vtkmatrix_to_numpy(vtktmat)
 
@@ -75,19 +76,35 @@ plt.plot(zvalues[2, :],
 ax = plt.gca()
 
 val = 0.6
-noise = 0.002
-vp = np.array([(0.0, 0.0, 0.0),
-               (0.0, 0.0, 0.0),
-               (val-noise, val, val+noise),
-               (1.0, 1.0, 1.0)])
+noise1 = 0.002
+noise2 = 0.01
+vp = np.array([(0.0, 0.0, 0.0, 0.0, 0.0),
+               (0.0, 0.0, 0.0, 0.0, 0.0),
+               (val, val - noise1, val + noise1, val - noise2, val + noise2),
+               (1.0, 1.0, 1.0, 1.0, 1.0)])
 wp = np.dot(tmat, vp)
 wp = wp / wp[3]
 
 vpz = vp[2, :]
 wpz = wp[2, :]
 
-plt.text(0.33, 1.72, '({:.4f}, {:.4f})\n({:.4f}, {:.4f})\n({:.4f}, {:.4f})'.format(
-    vpz[0], wpz[0], vpz[1], wpz[1], vpz[2], wpz[2]), bbox={'edgecolor': 'black', 'facecolor': 'white', 'pad':10})
+plt.text(0.33, 1.72, '({:.4f}, {:.4f})\n\n'
+                     'noise = {:.3f}\n'
+                     '({:.4f}, {:.4f})\n'
+                     '({:.4f}, {:.4f})\n'
+                     'diff = {:.2f} (cm)\n\n'
+                     'noise = {:.3f}\n'
+                     '({:.4f}, {:.4f})\n'
+                     '({:.4f}, {:.4f})\n'
+                     'diff = {:.2f} (cm)'.format(
+    vpz[0], wpz[0],
+    noise1,
+    vpz[1], wpz[1],
+    vpz[2], wpz[2], abs(wpz[1] - wpz[2]) * 100,
+    noise2,
+    vpz[3], wpz[3],
+    vpz[4], wpz[4], abs(wpz[3] - wpz[4]) * 100),
+         bbox={'edgecolor': 'black', 'facecolor': 'white', 'pad': 10})
 
 plt.title('Viewpoint to Real World Along Z Axis')
 plt.xlabel('Viewpoint Z')
@@ -98,6 +115,6 @@ for item in ([ax.title, ax.xaxis.label, ax.yaxis.label]):
     item.set_fontsize(18)
 for item in (ax.get_xticklabels() + ax.get_yticklabels()):
     item.set_fontsize(12)
-plt.show()
+# plt.show()
 # plt.ticklabel_format(style='sci', axis='y', scilimits=(0, 0))
 plt.savefig('plot_depth.png')
