@@ -207,7 +207,7 @@ class PostProcess(object):
             for i, hand in enumerate(handle):
                 hand.axis('off', frameon=False)
                 if i is not 2:
-                    tmp = hand.imshow(self._ims_d_images[1][i], origin='lower', interpolation='none')
+                    tmp = hand.imshow(self._ims_d_images[1][0], origin='lower', interpolation='none')
                 else:
                     tmp = hand.imshow(self._ims_d_images[1][i], origin='lower', interpolation='none', cmap='Greys_r')
                 axs.append(tmp)

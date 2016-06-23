@@ -68,6 +68,7 @@ class MabdiSimulate(object):
         output.setdefault('preflight_fps', 3)
         output.setdefault('postflight_fps', 3)
         output.setdefault('path_flight', 'helix_survey_ub')
+        output.setdefault('save_global_mesh', False)
         self._output = output
 
         self._file_prefix = mabdi.get_file_prefix(output['folder_name'])
@@ -518,6 +519,12 @@ class MabdiSimulate(object):
                                       nsteps=self._output['postflight_nsteps'],
                                       fps=self._output['postflight_fps'])
             # mabdi.MovieNamesList.write_movie_list(self._file_prefix) # has a bug
+
+        if self._output['save_global_mesh']:
+            plywriter = vtk.vtkPLYWriter()
+            plywriter.SetFileName(self._file_prefix + 'global_mesh.ply')
+            plywriter.SetInputConnection(self.mesh.GetOutputPort())
+            plywriter.Write()
 
         pp.save_plots()
 
