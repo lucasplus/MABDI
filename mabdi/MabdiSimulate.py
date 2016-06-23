@@ -36,19 +36,17 @@ class MabdiSimulate(object):
           the scenario view, and depth images after the simulation runs.
         """
 
-        start_time = time.strftime('%m-%d_%H-%M-%S_')
-        self._file_prefix = '../output/' + start_time
-        if not os.path.exists('../output/'):
-            os.makedirs('../output/')
-
         """ Configuration parameters """
 
         mabdi_param = {} if not mabdi_param else mabdi_param
         mabdi_param.setdefault('depth_image_size', (640, 480))
+        mabdi_param.setdefault('farplane_threshold', 1.0)  # see FilterDepthImageToSurface
+        mabdi_param.setdefault('convolution_threshold', 0.01)  # see FilterDepthImageToSurface
 
         sim_param = {} if not sim_param else sim_param
         sim_param.setdefault('environment_name', 'table')
         sim_param.setdefault('stanford_bunny_nbunnies', 1)
+        sim_param.setdefault('dynamic_environment', None)
         sim_param.setdefault('path_name', 'helix_table_ub')
         sim_param.setdefault('path_nsteps', 20)
         sim_param.setdefault('noise', False)  # you can also specify a number instead of a bool
@@ -56,8 +54,11 @@ class MabdiSimulate(object):
         self._sim_param = sim_param
 
         output = {} if not output else output
+        output.setdefault('folder_name', None)
         output.setdefault('movie', False)
         output.setdefault('movie_fps', 3)
+        output.setdefault('source_obs_position', None)
+        output.setdefault('source_obs_lookat', None)
         output.setdefault('movie_preflight', False)
         output.setdefault('movie_postflight', False)
         output.setdefault('preflight_nsteps', 30)
@@ -66,6 +67,8 @@ class MabdiSimulate(object):
         output.setdefault('postflight_fps', 3)
         output.setdefault('path_flight', 'helix_survey_ub')
         self._output = output
+
+        self._file_prefix = mabdi.get_file_prefix(output['folder_name'])
 
         """ Filters and sources (this block is basically the core of MABDI) """
 
@@ -81,10 +84,10 @@ class MabdiSimulate(object):
                                           name='simulated sensor',
                                           depth_image_size=mabdi_param['depth_image_size'])
         self.classifier = mabdi.FilterClassifier()
-        self.surf = mabdi.FilterDepthImageToSurface()
+        self.surf = mabdi.FilterDepthImageToSurface(
+            param_farplane_threshold=mabdi_param['farplane_threshold'],
+            param_convolution_threshold=mabdi_param['convolution_threshold'])
         self.mesh = mabdi.FilterWorldMesh(color=True)
-
-        # get bounds of source
 
         self.di.set_polydata(self.source)
 
@@ -100,14 +103,12 @@ class MabdiSimulate(object):
         self.sdi.set_polydata(self.mesh)
 
         # get bounds of the source without the floor
-        self.source.set_object_state(object_name='floor', state=False)
-        self.source.Update()
-        self.source_bounds = self.source.GetOutputDataObject(0).GetBounds()
-        self.source.set_object_state(object_name='floor', state=True)
-        self.source.Update()
-
         self.source.bounds, self.source.position, self.source.lookat = \
             self._find_bounds_and_observation_position_lookat(self.source)
+        if output['source_obs_position']:
+            self.source.position = output['source_obs_position']
+        if output['source_obs_lookat']:
+            self.source.lookat = output['source_obs_lookat']
 
         """ Sensor path """
 
@@ -244,8 +245,8 @@ class MabdiSimulate(object):
             position = self._create_path({'name': 'helix',
                                           'nsteps': nsteps,
                                           'helix_nspins': 2,
-                                          'helix_x_diameter': xd + 3.0,
-                                          'helix_z_diameter': zd + 3.0,
+                                          'helix_x_diameter': xd + 1.0,
+                                          'helix_z_diameter': zd + 1.0,
                                           'helix_y_start_end': (0.75, 1.00)})
             lookat = self._create_path({'name': 'line',
                                         'nsteps': nsteps,
@@ -260,9 +261,9 @@ class MabdiSimulate(object):
             position = self._create_path({'name': 'helix',
                                           'nsteps': nsteps,
                                           'helix_nspins': 1,
-                                          'helix_x_diameter': xd + 3.0,
-                                          'helix_z_diameter': zd + 3.5,
-                                          'helix_y_start_end': (0.75, 2.0)})
+                                          'helix_x_diameter': xd + 5.0,
+                                          'helix_z_diameter': zd + 5.5,
+                                          'helix_y_start_end': (0.75, 4.0)})
             lookat = self._create_path({'name': 'line',
                                         'nsteps': nsteps,
                                         'line_start': (0.0, 0.1, 0.0),
@@ -462,6 +463,7 @@ class MabdiSimulate(object):
                 global_mesh=self.mesh,
                 file_prefix=self._file_prefix)
 
+        de = self._sim_param['dynamic_environment']
         for i, (pos, lka) in enumerate(zip(self.position, self.lookat)):
             logging.debug('START MAIN LOOP')
             start = timer()
@@ -498,7 +500,9 @@ class MabdiSimulate(object):
                                       survey_mesh=True,
                                       nsteps=self._output['postflight_nsteps'],
                                       fps=self._output['postflight_fps'])
-            # mabdi.MovieNamesList.write_movie_list(self._file_prefix)
+            # mabdi.MovieNamesList.write_movie_list(self._file_prefix) # has a bug
+
+        pp.save_plots()
 
         """ Exit gracefully """
 

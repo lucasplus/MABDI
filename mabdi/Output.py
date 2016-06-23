@@ -107,6 +107,7 @@ class PostProcess(object):
         """
 
         # we will use this for any file we save
+        self._file_prefix = file_prefix
         self._movie_name = file_prefix + 'pp_movie.avi'
         MovieNamesList.movie_names.append(self._movie_name)
 
@@ -213,21 +214,21 @@ class PostProcess(object):
             axs.append(plt.subplot2grid((fnr, 3), (0, 2)))
             ax = axs[-1]
 
-            ax.plot(np.arange(1, len(self._global_mesh_nc)+1), np.array(self._global_mesh_nc))
+            ax.plot(np.arange(1, len(self._global_mesh_nc) + 1), np.array(self._global_mesh_nc))
             xlim, ylim = ax.get_xlim(), ax.get_ylim()
             ax.clear()
             ax.set_xlim(xlim)
             ax.set_ylim(ylim)
 
-            plt.title('Size of global mesh')
+            plt.title('Number of Elements in Global Mesh')
             plt.xlabel('iteration')
             plt.ylabel('number of elements')
             plt.grid(True)
 
             for item in ([ax.title, ax.xaxis.label, ax.yaxis.label]):
-                item.set_fontsize(15)
+                item.set_fontsize(22)
             for item in (ax.get_xticklabels() + ax.get_yticklabels()):
-                item.set_fontsize(10)
+                item.set_fontsize(16)
             plt.ticklabel_format(style='sci', axis='y', scilimits=(0, 0))
 
         # adjust padding
@@ -251,8 +252,8 @@ class PostProcess(object):
                 if self._movie['plots']:
                     axscy.next().plot(np.arange(1, i + 1 + 1),
                                       np.array(self._global_mesh_nc[0:i + 1]),
-                                      '-*', color='b',
-                                      markersize=10, markerfacecolor='g')
+                                      '-o', color='b',
+                                      markersize=5, markerfacecolor='g')
 
                 self._writer.grab_frame()
 
@@ -264,6 +265,25 @@ class PostProcess(object):
                      .format(fig.dpi, fig.get_size_inches() * fig.dpi))
 
         del self._ims_scenario, self._ims_d_images
+
+    def save_plots(self):
+        # plt.figure(frameon=False, figsize=(40, 20), dpi=100)
+        plt.figure(frameon=False, dpi=100)
+        plt.plot(np.arange(1, len(self._global_mesh_nc) + 1),
+                 np.array(self._global_mesh_nc),
+                 '-o', color='b',
+                 markersize=5, markerfacecolor='g')
+        plt.title('Number of Elements in Global Mesh')
+        plt.xlabel('iteration')
+        plt.ylabel('number of elements')
+        plt.grid(True)
+        ax = plt.gca()
+        for item in ([ax.title, ax.xaxis.label, ax.yaxis.label]):
+            item.set_fontsize(18)
+        for item in (ax.get_xticklabels() + ax.get_yticklabels()):
+            item.set_fontsize(12)
+        plt.ticklabel_format(style='sci', axis='y', scilimits=(0, 0))
+        plt.savefig(self._file_prefix + 'nelements_plot.png')
 
 
 def get_image_from_render_window(vtk_render_window):

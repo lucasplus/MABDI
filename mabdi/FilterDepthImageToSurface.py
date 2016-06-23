@@ -27,13 +27,13 @@ class FilterDepthImageToSurface(VTKPythonAlgorithmBase):
 
     def __init__(self,
                  param_farplane_threshold=1.0,
-                 param_convolution_theshold=0.01):
+                 param_convolution_threshold=0.01):
         """
         Algorithm setup and define parameters.
         :param param_farplane_threshold: default=1.0
           Values on the depth image range from 0.0-1.0. Points with depth values greater
           than param_farplane_threshold will be thrown away.
-        :param param_convolution_theshold: default=0.01
+        :param param_convolution_threshold: default=0.01
           Convolution is used to determine pixel neighbors with a large difference. If
           there is one, the point will be thrown away. This threshold controls sensitivity.
         """
@@ -43,7 +43,7 @@ class FilterDepthImageToSurface(VTKPythonAlgorithmBase):
                                         nOutputPorts=1, outputType='vtkPolyData')
 
         self._param_farplane_threshold = param_farplane_threshold
-        self.param_convolution_theshold = param_convolution_theshold
+        self.param_convolution_theshold = param_convolution_threshold
 
         self._sizex = []
         self._sizey = []

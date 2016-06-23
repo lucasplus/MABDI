@@ -1,3 +1,6 @@
+import os
+import time
+
 import vtk
 
 from timeit import default_timer as timer
@@ -48,6 +51,29 @@ class DebugTimeVTKFilter(object):
             self._name,
             self._end - self._start))
 
+
+""" Mabdi Simulate related helper functions """
+
+
+def get_file_prefix(folder_name):
+
+    # output folder
+    start_time = time.strftime('%m-%d_%H-%M-%S_')
+    output_dir = '../output/'
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+
+    if folder_name:
+        file_dir = output_dir + folder_name + '/'
+    else:
+        file_dir = output_dir
+
+    if not os.path.exists(file_dir):
+        os.makedirs(file_dir)
+
+    file_prefix = file_dir + start_time
+
+    return file_prefix
 
 
 

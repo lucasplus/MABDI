@@ -28,7 +28,7 @@ class SourceStandfordBunny(VTKPythonAlgorithmBase):
 
         self._nbunnies = nbunnies
 
-        dis = 1.0
+        dis = 1.5
         ytrans = -0.2
         if nbunnies is 1:
             trans = [(0.0, ytrans, 0.0)]
@@ -45,9 +45,9 @@ class SourceStandfordBunny(VTKPythonAlgorithmBase):
                      (dis, ytrans, 0.0),
                      (0.0, ytrans, -dis)]
 
-        self._objects = {'bunny_'+str(x): True for x in range(nbunnies)}
+        self.objects = {'bunny_' + str(x): True for x in range(nbunnies)}
         self._polydata = {'bunny_'+str(x): vtk.vtkTransformPolyDataFilter() for x in range(nbunnies)}
-        self._keys = self._objects.keys()
+        self._keys = self.objects.keys()
         for i, (key, tfilter) in enumerate(self._polydata.iteritems()):
             reader = vtk.vtkPLYReader()
             reader.SetFileName(self._bunny_ply_file)
@@ -84,7 +84,7 @@ class SourceStandfordBunny(VTKPythonAlgorithmBase):
         # tf.SetInputConnection(reader.GetOutputPort())
         # tf.SetTransform(transform)
         for i, (key, tfilter) in enumerate(self._polydata.iteritems()):
-            if self._objects[key]:
+            if self.objects[key]:
                 append.AddInputConnection(tfilter.GetOutputPort())
 
         append.Update()
@@ -110,8 +110,8 @@ class SourceStandfordBunny(VTKPythonAlgorithmBase):
 
         if object_name == 'floor':
             self._floor = state
-        elif object_name in self._objects:
-            self._objects[object_name] = state
+        elif object_name in self.objects:
+            self.objects[object_name] = state
         else:
             return 1
 

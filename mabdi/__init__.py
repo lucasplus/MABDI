@@ -11,6 +11,7 @@ from FilterWorldMesh import FilterWorldMesh
 from Utilities import VTKImageActorObjects
 from Utilities import VTKPolyDataActorObjects
 from Utilities import DebugTimeVTKFilter
+from Utilities import get_file_prefix
 from Output import PostProcess
 from Output import RenderWindowToAvi
 from Output import MovieNamesList
