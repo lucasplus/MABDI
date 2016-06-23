@@ -12,7 +12,8 @@ fps = int(nsteps/10)
 
 sim = mabdi.MabdiSimulate(
     mabdi_param={'depth_image_size': (640, 480),
-                 'farplane_threshold': 0.99},
+                 'farplane_threshold': 0.99,
+                 'classifier_threshold': 0.1},
     sim_param={'environment_name': 'stanford_bunny',
                'stanford_bunny_nbunnies': 3,
                'dynamic_environment': [(int(round(nsteps*0.5)) - 1, 1)],
@@ -27,7 +28,7 @@ sim = mabdi.MabdiSimulate(
             'movie_savefig_at_frame': (3, 30),
             'source_obs_position': (7.0, 3.0, 11.0),
             'source_obs_lookat': (-5.0, -1.4, -8.0),
-            'movie_preflight': True,
+            'movie_preflight': False,
             'movie_postflight': True,
             'preflight_nsteps': nsteps,
             'postflight_nsteps': nsteps,

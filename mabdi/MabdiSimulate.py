@@ -42,6 +42,7 @@ class MabdiSimulate(object):
         mabdi_param.setdefault('depth_image_size', (640, 480))
         mabdi_param.setdefault('farplane_threshold', 1.0)  # see FilterDepthImageToSurface
         mabdi_param.setdefault('convolution_threshold', 0.01)  # see FilterDepthImageToSurface
+        mabdi_param.setdefault('classifier_threshold', 0.01)  # see FilterClassifier
 
         sim_param = {} if not sim_param else sim_param
         sim_param.setdefault('environment_name', 'table')
@@ -50,7 +51,7 @@ class MabdiSimulate(object):
         sim_param.setdefault('dynamic_environment_init_state', None)
         sim_param.setdefault('path_name', 'helix_table_ub')
         sim_param.setdefault('path_nsteps', 20)
-        sim_param.setdefault('noise', False)  # you can also specify a number instead of a bool
+        sim_param.setdefault('noise', False)  # you can also specify a number instead of a bool, default is 0.002
         sim_param.setdefault('interactive', False)
         self._sim_param = sim_param
 
