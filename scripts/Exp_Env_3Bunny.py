@@ -9,7 +9,7 @@ logging.basicConfig(level=logging.INFO,
 
 """ parameters that apply to all """
 
-nsteps = 300
+nsteps = 50
 fps = int(nsteps / 10)
 
 g_mabdi_param = {'depth_image_size': (640, 480),
@@ -22,7 +22,7 @@ g_sim_param = {'environment_name': 'stanford_bunny',
                'path_nsteps': nsteps,
                'noise': True,
                'interactive': False}
-g_output = {'folder_name': 'env_3bunny_noise_true',
+g_output = {'folder_name': 'env_3bunny',
             'movie': True,
             'movie_fps': fps,
             'movie_savefig_at_frame': (0, 1, 2, int(round(nsteps * 0.5)) - 2, int(round(nsteps * 0.5)) - 1, int(round(nsteps * 0.5)), int(round(nsteps * 0.5)) + 1, nsteps-1, nsteps),
@@ -37,17 +37,19 @@ g_output = {'folder_name': 'env_3bunny_noise_true',
             'path_flight': 'helix_survey_bunny_ub',
             'save_global_mesh': True}
 
+runall = True
+
 """ static environment, noise false """
 
-run = False
-if run:
+run = True
+if run or runall:
     mabdi_param, sim_param, output = g_mabdi_param.copy(), g_sim_param.copy(), g_output.copy()
 
     sim_param.pop('dynamic_environment')
     sim_param.pop('dynamic_environment_init_state')
     sim_param['noise'] = False
 
-    output['folder_name'] = 'env_3bunny_static_noise_false'
+    output['folder_name'] = 'env_3bunny_static_noise_false_nsteps' + str(nsteps)
 
     sim = mabdi.MabdiSimulate(mabdi_param, sim_param, output)
     sim.run()
@@ -56,14 +58,14 @@ if run:
 """ static environment, noise true """
 
 run = True
-if run:
+if run or runall:
     mabdi_param, sim_param, output = g_mabdi_param.copy(), g_sim_param.copy(), g_output.copy()
 
     sim_param.pop('dynamic_environment')
     sim_param.pop('dynamic_environment_init_state')
     sim_param['noise'] = True
 
-    output['folder_name'] = 'env_3bunny_static_noise_true'
+    output['folder_name'] = 'env_3bunny_static_noise_true_nsteps' + str(nsteps)
 
     sim = mabdi.MabdiSimulate(mabdi_param, sim_param, output)
     sim.run()
@@ -72,12 +74,12 @@ if run:
 """ dynamic environment, noise false """
 
 run = True
-if run:
+if run or runall:
     mabdi_param, sim_param, output = g_mabdi_param.copy(), g_sim_param.copy(), g_output.copy()
 
     sim_param['noise'] = False
 
-    output['folder_name'] = 'env_3bunny_dynamic_noise_false'
+    output['folder_name'] = 'env_3bunny_dynamic_noise_false_nsteps' + str(nsteps)
 
     sim = mabdi.MabdiSimulate(mabdi_param, sim_param, output)
     sim.run()
@@ -86,12 +88,12 @@ if run:
 """ dynamic environment, noise true """
 
 run = True
-if run:
+if run or runall:
     mabdi_param, sim_param, output = g_mabdi_param.copy(), g_sim_param.copy(), g_output.copy()
 
     sim_param['noise'] = True
 
-    output['folder_name'] = 'env_3bunny_dynamic_noise_true'
+    output['folder_name'] = 'env_3bunny_dynamic_noise_true_nsteps' + str(nsteps)
 
     sim = mabdi.MabdiSimulate(mabdi_param, sim_param, output)
     sim.run()

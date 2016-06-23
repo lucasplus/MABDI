@@ -444,7 +444,7 @@ class MabdiSimulate(object):
         return
 
     def run(self):
-        logging.info('running simulation')
+        logging.info('')
 
         # self.iren.Start()
 
