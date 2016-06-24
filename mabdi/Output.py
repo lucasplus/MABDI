@@ -41,7 +41,7 @@ class MovieNamesList(object):
 class RenderWindowToAvi(object):
     ntimes = 0
 
-    def __init__(self, render_window, file_prefix, fps=2):
+    def __init__(self, render_window, file_prefix, fps=2, savefig_at_frame=()):
 
         self._movie_name = file_prefix + \
                            'movie_' + str(RenderWindowToAvi.ntimes) + '.avi'
@@ -60,6 +60,9 @@ class RenderWindowToAvi(object):
             raise
         self._writer = ffmpegwriter(fps=fps)
 
+        self._savefig_at_frame = savefig_at_frame
+        self._file_prefix = file_prefix
+
     def _render_cb(self, obj, env):
         im = get_image_from_render_window(vtk_render_window=self._render_window)
         self._ims.append(im)
@@ -77,6 +80,9 @@ class RenderWindowToAvi(object):
                 start = timer()
                 ax.set_data(im)
                 self._writer.grab_frame()
+                if i in self._savefig_at_frame:
+                    plt.savefig(self._file_prefix +
+                                'flight' + str(RenderWindowToAvi.ntimes) + '_frame_' + str(i) + '.png')
                 end = timer()
                 logging.debug('Processed movie frame {} of {}, {} seconds'
                               .format(i + 1, len(self._ims), end - start))
