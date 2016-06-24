@@ -75,46 +75,62 @@ plt.plot(zvalues[2, :],
          markersize=2, markerfacecolor='g')
 ax = plt.gca()
 
-val = 0.6
-noise1 = 0.002
-noise2 = 0.01
-vp = np.array([(0.0, 0.0, 0.0, 0.0, 0.0),
-               (0.0, 0.0, 0.0, 0.0, 0.0),
-               (val, val - noise1, val + noise1, val - noise2, val + noise2),
-               (1.0, 1.0, 1.0, 1.0, 1.0)])
+val1 = 0.6
+val2 = 0.8
+noise = 0.001
+vp = np.array([(0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
+               (0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
+               (val1 - noise, val1, val1 + noise, val2 - noise, val2, val2 + noise),
+               (1.0, 1.0, 1.0, 1.0, 1.0, 1.0)])
 wp = np.dot(tmat, vp)
 wp = wp / wp[3]
 
 vpz = vp[2, :]
 wpz = wp[2, :]
 
-plt.text(0.33, 1.72, '({:.4f}, {:.4f})\n\n'
-                     'noise = {:.3f}\n'
-                     '({:.4f}, {:.4f})\n'
-                     '({:.4f}, {:.4f})\n'
-                     'diff = {:.2f} (cm)\n\n'
-                     'noise = {:.3f}\n'
-                     '({:.4f}, {:.4f})\n'
-                     '({:.4f}, {:.4f})\n'
-                     'diff = {:.2f} (cm)'.format(
-    vpz[0], wpz[0],
-    noise1,
-    vpz[1], wpz[1],
-    vpz[2], wpz[2], abs(wpz[1] - wpz[2]) * 100,
-    noise2,
-    vpz[3], wpz[3],
-    vpz[4], wpz[4], abs(wpz[3] - wpz[4]) * 100),
-         bbox={'edgecolor': 'black', 'facecolor': 'white', 'pad': 10})
+plt.plot(vpz,
+         wpz,
+         'o', color='b',
+         markersize=9, markerfacecolor='r')
+
+string = 'with noise = {:.3f}\n' \
+         '      x           y  \n' \
+         '({:.4f}, {:.4f})\n' \
+         '({:.4f}, {:.4f})\n' \
+         '({:.4f}, {:.4f})\n' \
+         'diff = {:.2f} (cm)'.format(noise,
+                                     vpz[0], wpz[0],
+                                     vpz[1], wpz[1],
+                                     vpz[2], wpz[2],
+                                     abs(wpz[2] - wpz[0]) * 100)
+
+bbox = {'edgecolor': 'black', 'facecolor': 'white', 'pad': 10}
+plt.text(0.305, 1.72, string, bbox=bbox)
+
+string = 'with noise = {:.3f}\n' \
+         '      x           y  \n' \
+         '({:.4f}, {:.4f})\n' \
+         '({:.4f}, {:.4f})\n' \
+         '({:.4f}, {:.4f})\n' \
+         'diff = {:.2f} (cm)'.format(noise,
+                                     vpz[3], wpz[3],
+                                     vpz[4], wpz[4],
+                                     vpz[5], wpz[5],
+                                     abs(wpz[5] - wpz[3]) * 100)
+
+plt.text(0.835, 1.20, string, bbox=bbox)
+
+
 
 plt.title('Viewpoint to Real World Along Z Axis')
-plt.xlabel('Viewpoint Z')
-plt.ylabel('Real World Z')
+plt.xlabel('Viewpoint Z (normalized units)')
+plt.ylabel('Real World Z (m)')
 plt.grid(True)
 
 for item in ([ax.title, ax.xaxis.label, ax.yaxis.label]):
     item.set_fontsize(18)
 for item in (ax.get_xticklabels() + ax.get_yticklabels()):
     item.set_fontsize(12)
-# plt.show()
-# plt.ticklabel_format(style='sci', axis='y', scilimits=(0, 0))
+
 plt.savefig('plot_depth.png')
+plt.show()
