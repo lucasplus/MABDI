@@ -233,13 +233,13 @@ class MabdiSimulate(object):
             position = self._create_path({'name': 'helix',
                                           'nsteps': nsteps,
                                           'helix_nspins': 1,
-                                          'helix_x_diameter': xd + 1.0,
-                                          'helix_z_diameter': zd + 1.5,
+                                          'helix_x_diameter': xd + 1.5,
+                                          'helix_z_diameter': zd + 1.0,
                                           'helix_y_start_end': (0.75, 1.5)})
             lookat = self._create_path({'name': 'line',
                                         'nsteps': nsteps,
-                                        'line_start': (0.0, -0.1, 0.0),
-                                        'line_end': (0.0, 0.3, 0.0)})
+                                        'line_start': (0.0, 0.4, 0.0),
+                                        'line_end': (0.0, 0.6, 0.0)})
         elif name == 'helix_bunny_ub':
             if not nsteps: nsteps = 20
             xd = b[1] - b[0]
