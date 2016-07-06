@@ -2,8 +2,6 @@ import vtk
 from vtk.util.vtkAlgorithm import VTKPythonAlgorithmBase
 from vtk.util import numpy_support
 from vtk.numpy_interface import dataset_adapter as dsa
-from vtk.numpy_interface import algorithms as alg
-from vtk.util import keys
 
 import numpy as np
 
@@ -15,7 +13,7 @@ class FilterDepthImage(VTKPythonAlgorithmBase):
     """
     Create a depth image of a scene
 
-    Given the geometric information of the scene (vtkPolyData) and the
+    This class uses the geometric information of the scene (vtkPolyData) and the
     orientation of the depth sensor.
     """
 
@@ -33,7 +31,6 @@ class FilterDepthImage(VTKPythonAlgorithmBase):
           Noise to add to depth image.
         :param depth_image_size:
           Size of the depth image.
-        :return:
         """
 
         VTKPythonAlgorithmBase.__init__(self,

@@ -1,14 +1,8 @@
 import vtk
 from vtk.util.vtkAlgorithm import VTKPythonAlgorithmBase
-from vtk.util import numpy_support
-from vtk.util.colors import eggshell, slate_grey_light, red, yellow, salmon
 from vtk.numpy_interface import dataset_adapter as dsa
-from vtk.numpy_interface import algorithms as alg
-
-from Utilities import DebugTimeVTKFilter
 
 import numpy as np
-from scipy import ndimage
 import matplotlib.pyplot as plt
 
 from itertools import cycle

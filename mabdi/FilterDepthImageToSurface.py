@@ -2,13 +2,11 @@ import vtk
 from vtk.util.vtkAlgorithm import VTKPythonAlgorithmBase
 from vtk.util import numpy_support
 from vtk.numpy_interface import dataset_adapter as dsa
-from vtk.numpy_interface import algorithms as alg
 
 from Utilities import DebugTimeVTKFilter
 
 import numpy as np
 from scipy import ndimage
-import matplotlib.pyplot as plt
 
 from timeit import default_timer as timer
 import logging
@@ -68,9 +66,7 @@ class FilterDepthImageToSurface(VTKPythonAlgorithmBase):
         self._extract.SetImplicitFunction(planefunc)
 
     def RequestData(self, request, inInfo, outInfo):
-        """
-        Note: vtkDataSetTriangleFilter  might be a better way to do this
-        """
+
         logging.info('')
         start = timer()
 
