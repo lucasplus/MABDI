@@ -165,7 +165,7 @@ class FilterDepthImage(VTKPythonAlgorithmBase):
         # add noise
         if self._noise is not 0.0:
             nvfa = numpy_support.vtk_to_numpy(vfa)
-            nvfa += self._noise * nvfa * np.random.normal(0.0, 1.0, nvfa.shape)
+            nvfa += self._noise * np.random.normal(0.0, 1.0, nvfa.shape)
             vfa = dsa.numpyTovtkDataArray(nvfa)
 
         # pack the depth values into the output vtkImageData
