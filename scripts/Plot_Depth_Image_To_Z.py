@@ -12,44 +12,39 @@ def vtkmatrix_to_numpy(matrix):
             m[i, j] = matrix.GetElement(i, j)
     return m
 
+"""
+Get transformation from viewpoint coordinates to
+real-world coordinates. (tmat)
+"""
 
-# create a rendering window and renderer
+# vtk rendering objects
 ren = vtk.vtkRenderer()
 renWin = vtk.vtkRenderWindow()
 renWin.AddRenderer(ren)
-
-# create a renderwindowinteractor
 iren = vtk.vtkRenderWindowInteractor()
 iren.SetRenderWindow(renWin)
 
-# create cube
+# create cube and add it to renderer
+# (not needed except to validate positioning of camera)
 cube = vtk.vtkCubeSource()
 cube.SetCenter(0.0, 0.0, 3.0)
-
-# mapper
 cubeMapper = vtk.vtkPolyDataMapper()
 cubeMapper.SetInputConnection(cube.GetOutputPort())
-
-# actor
 cubeActor = vtk.vtkActor()
 cubeActor.SetMapper(cubeMapper)
-
-# assign actor to the renderer
 ren.AddActor(cubeActor)
 
+# set the intrinsic parameters
 renWin.SetSize((640, 480))
 cam = ren.GetActiveCamera()
 cam.SetViewAngle(60.0)
 cam.SetClippingRange(0.8, 4.0)
 iren.GetInteractorStyle().SetAutoAdjustCameraClippingRange(0)
 
-# have it looking down and underneath the "floor"
-# so that it will produce a blank vtkImageData until
-# set_sensor_orientation() is called
+# have it positioned at the origin and looking down the z axis
 cam.SetPosition(0.0, 0.0, 0.0)
 cam.SetFocalPoint(0.0, 0.0, 1.0)
 
-# enable user interface interactor
 iren.Initialize()
 iren.Render()
 
@@ -59,22 +54,102 @@ vtktmat = cam.GetCompositeProjectionTransformMatrix(
 vtktmat.Invert()
 tmat = vtkmatrix_to_numpy(vtktmat)
 
-nvalues = 100
-zvalues = np.zeros((4, nvalues))
-zvalues[2, :] = np.linspace(0, 1, nvalues)
-zvalues[3, :] = np.ones((1, zvalues.shape[1]))
-wvalues = np.dot(tmat, zvalues)
-wvalues = wvalues / wvalues[3]
-
-wz = wvalues[2, :]
+""" Plot """
 
 plt.figure(frameon=False, dpi=100)
-plt.plot(zvalues[2, :],
+
+nvalues = 100
+noise = 0.002
+
+# vpc - view point coordinates
+# wc - world coordinates
+vpc = np.zeros((4, nvalues))
+vpc[2, :] = np.linspace(0, 1, nvalues)
+vpc[3, :] = np.ones((1, vpc.shape[1]))
+wc = np.dot(tmat, vpc)
+wc = wc / wc[3]
+wz = wc[2, :]
+
+plt.plot(vpc[2, :],
          wz,
          '-o', color='b',
          markersize=2, markerfacecolor='g')
-ax = plt.gca()
 
+# nvpc, nwc - same as vpc, wc but with noise
+nvpc = vpc.copy()
+nvpc[2, :] += noise
+nwc = np.dot(tmat, nvpc)
+nwc = nwc / nwc[3]
+nwz = nwc[2, :]
+
+# plt.plot(vpc[2, :],
+#          nwz,
+#          color='r')
+
+# nvpc, nwc - same as vpc, wc but with noise
+nvpc = vpc.copy()
+nvpc[2, :] -= noise
+nwc = np.dot(tmat, nvpc)
+nwc = nwc / nwc[3]
+nwz = nwc[2, :]
+
+# plt.plot(vpc[2, :],
+#          nwz,
+#          color='r')
+
+
+""" Plot display properties """
+
+plt.title('View to Sensor Coordinates Along Z Axis')
+plt.xlabel('View Coordinates Z (normalized units)')
+plt.ylabel('Sensor Coordinates Z (m)')
+plt.grid(True)
+
+ax = plt.gca()
+for item in ([ax.title, ax.xaxis.label, ax.yaxis.label]):
+    item.set_fontsize(18)
+for item in (ax.get_xticklabels() + ax.get_yticklabels()):
+    item.set_fontsize(12)
+
+# plt.savefig('plot_depth.png')
+plt.show()
+
+""" Plot """
+
+# wc
+
+plt.figure(frameon=False, dpi=100)
+
+plt.plot(wz,
+         (wz-nwz)*100,
+         '-o', color='b',
+         markersize=2, markerfacecolor='g',
+         label='MABDI')
+
+plt.plot(wz,
+         (0.5*2.85e-5*pow(wz*100, 2)),
+         color='r',
+         label='Khoshelham Noise Model')
+
+""" Plot display properties """
+
+plt.title('Standard Deviation of Noise Along Sensor Z')
+plt.xlabel('Distance to Actual Point (m)')
+plt.ylabel('Standard Deviation of Error (cm)')
+plt.grid(True)
+
+ax = plt.gca()
+for item in ([ax.title, ax.xaxis.label, ax.yaxis.label]):
+    item.set_fontsize(18)
+for item in (ax.get_xticklabels() + ax.get_yticklabels()):
+    item.set_fontsize(12)
+
+plt.legend(loc='upper left')
+
+# plt.savefig('plot_depth.png')
+plt.show()
+
+"""
 val1 = 0.6
 val2 = 0.8
 noise = 0.001
@@ -119,18 +194,4 @@ string = 'with noise = {:.3f}\n' \
                                      abs(wpz[5] - wpz[3]) * 100)
 
 plt.text(0.835, 1.20, string, bbox=bbox)
-
-
-
-plt.title('Viewpoint to Real World Along Z Axis')
-plt.xlabel('Viewpoint Z (normalized units)')
-plt.ylabel('Real World Z (m)')
-plt.grid(True)
-
-for item in ([ax.title, ax.xaxis.label, ax.yaxis.label]):
-    item.set_fontsize(18)
-for item in (ax.get_xticklabels() + ax.get_yticklabels()):
-    item.set_fontsize(12)
-
-plt.savefig('plot_depth.png')
-plt.show()
+"""
