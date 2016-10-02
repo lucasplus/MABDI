@@ -31,7 +31,7 @@ Render Window bottom row
 source = mabdi.SourceEnvironmentTable()
 di = mabdi.FilterDepthImage(offscreen=True, name='sensor')
 sdi = mabdi.FilterDepthImage(offscreen=True, name='simulated sensor')
-classifier = mabdi.FilterClassifier(visualize=False)
+classifier = mabdi.FilterClassifier()
 surf = mabdi.FilterDepthImageToSurface()
 mesh = mabdi.FilterWorldMesh(color=False)
 

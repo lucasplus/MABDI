@@ -39,7 +39,7 @@ g_output = {'folder_name': 'env_3bunny',
 
 runall = False
 
-""" static environment, noise false """
+""" 3bunny, static environment, noise false """
 
 run = False
 if run or runall:
@@ -55,7 +55,7 @@ if run or runall:
     sim.run()
     del sim
 
-""" static environment, noise true """
+""" 3bunny, static environment, noise true """
 
 run = False
 if run or runall:
@@ -71,7 +71,7 @@ if run or runall:
     sim.run()
     del sim
 
-""" dynamic environment, noise false """
+""" 3bunny, dynamic environment, noise false """
 
 run = False
 if run or runall:
@@ -85,7 +85,7 @@ if run or runall:
     sim.run()
     del sim
 
-""" dynamic environment, noise true """
+""" 3bunny, dynamic environment, noise true """
 
 run = True
 if run or runall:
