@@ -1,4 +1,109 @@
+import vtk
+from vtk.util.colors import blue, hot_pink
+
 import numpy as np
+
+""" Visualization Helpers """
+
+
+def add_sensor_visualization(filter_depth_image, positions, vtk_renderer):
+    """
+    Add visualization specific to the sensor
+    :param filter_depth_image: FilterDepthImage, needed to get camera info
+    :param positions: list of sensor positions
+    :param vtk_renderer: The vtkRenderer where the actors will be added.
+    """
+
+    """ Frustum of the sensor """
+
+    cameraActor = vtk.vtkCameraActor()
+    cameraActor.SetCamera(filter_depth_image.get_vtk_camera())
+    cameraActor.SetWidthByHeightRatio(filter_depth_image.get_width_by_height_ratio())
+    cameraActor.GetProperty().SetColor(blue)
+
+    """ Path of the sensor """
+
+    npts = positions.shape[0]
+
+    points = vtk.vtkPoints()
+    points.SetNumberOfPoints(npts)
+    lines = vtk.vtkCellArray()
+    lines.InsertNextCell(npts)
+    for i, pos in enumerate(positions):
+        points.SetPoint(i, pos)
+        lines.InsertCellPoint(i)
+
+    polydata = vtk.vtkPolyData()
+    polydata.SetPoints(points)
+    polydata.SetLines(lines)
+
+    polymapper = vtk.vtkPolyDataMapper()
+    polymapper.SetInputData(polydata)
+    polymapper.Update()
+
+    actor = vtk.vtkActor()
+    actor.SetMapper(polymapper)
+    actor.GetProperty().SetColor(blue)
+    actor.GetProperty().SetOpacity(0.5)
+
+    ball = vtk.vtkSphereSource()
+    ball.SetRadius(0.02)
+    ball.SetThetaResolution(12)
+    ball.SetPhiResolution(12)
+    balls = vtk.vtkGlyph3D()
+    balls.SetInputData(polydata)
+    balls.SetSourceConnection(ball.GetOutputPort())
+    mapBalls = vtk.vtkPolyDataMapper()
+    mapBalls.SetInputConnection(balls.GetOutputPort())
+    spcActor = vtk.vtkActor()
+    spcActor.SetMapper(mapBalls)
+    spcActor.GetProperty().SetColor(hot_pink)
+    spcActor.GetProperty().SetSpecularColor(1, 1, 1)
+    spcActor.GetProperty().SetSpecular(0.3)
+    spcActor.GetProperty().SetSpecularPower(20)
+    spcActor.GetProperty().SetAmbient(0.2)
+    spcActor.GetProperty().SetDiffuse(0.8)
+
+    """ Add to the given renderer """
+
+    vtk_renderer.AddActor(spcActor)
+    vtk_renderer.AddActor(cameraActor)
+    vtk_renderer.AddActor(actor)
+
+
+""" Environment Calculations """
+
+
+def find_bounds_and_observation_position_lookat(vtk_algorithm):
+    """
+    Crude method to automatically calculate bounds of the environment
+    and estimate a good position for a camera to observe the environment.
+    :param vtk_algorithm: vtkAlgorithm containing environment mesh
+    :return:
+    """
+    bounds = []
+    if callable(vtk_algorithm.set_object_state):
+        vtk_algorithm.set_object_state(object_id='floor', state=False)
+        vtk_algorithm.Update()
+        bounds = vtk_algorithm.GetOutputDataObject(0).GetBounds()
+        vtk_algorithm.set_object_state(object_id='floor', state=True)
+        vtk_algorithm.Update()
+    else:
+        bounds = vtk_algorithm.GetOutputDataObject(0).GetBounds()
+
+    # all these values were found very empirically
+    padc = (3.0, 5.0, 8.0)  # pad coefficient
+    position = (padc[0] * bounds[1] + 4.0,
+                padc[1] * bounds[3],
+                padc[2] * bounds[5] * 2.0 + 3.0)
+    lookat = (-padc[0] * bounds[1],
+              padc[1] * bounds[3] * -0.3,
+              -padc[2] * bounds[5])
+
+    return bounds, position, lookat
+
+
+""" Path Creation """
 
 
 def create_sensor_path(name=None, nsteps=None, bounds=None):

@@ -9,7 +9,7 @@ logging.basicConfig(level=logging.INFO,
 
 """ parameters that apply to all """
 
-nsteps = 300
+nsteps = 30
 fps = int(nsteps / 10)
 
 g_mabdi_param = {'depth_image_size': (640, 480),
@@ -28,8 +28,8 @@ g_output = {'folder_name': 'env_3bunny',
             'movie_savefig_at_frame': (0, 1, 2, int(round(nsteps * 0.5)) - 2, int(round(nsteps * 0.5)) - 1, int(round(nsteps * 0.5)), int(round(nsteps * 0.5)) + 1, nsteps-1, nsteps),
             'source_obs_position': (7.0, 3.0, 11.0),
             'source_obs_lookat': (-5.0, -1.4, -8.0),
-            'movie_preflight': False,
-            'movie_postflight': False,
+            'movie_preflight': True,
+            'movie_postflight': True,
             'preflight_nsteps': nsteps,
             'postflight_nsteps': nsteps,
             'preflight_fps': fps,

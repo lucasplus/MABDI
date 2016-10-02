@@ -16,4 +16,5 @@ from Output import PostProcess
 from Output import RenderWindowToAvi
 from Output import MovieNamesList
 
-import SensorPath
+
+import MabdiSimulateUtilities

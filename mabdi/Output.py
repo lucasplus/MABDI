@@ -1,10 +1,14 @@
+import vtk
+from vtk.util import numpy_support
+from vtk.util.colors import eggshell, slate_grey_light, salmon
+
+import mabdi
+from mabdi.MabdiSimulateUtilities import create_sensor_path
+
 import sys
 import ntpath
 
 from itertools import cycle
-
-import vtk
-from vtk.util import numpy_support
 
 import numpy as np
 
@@ -312,3 +316,78 @@ def get_image_from_render_window(vtk_render_window):
     vtkim = window_to_image_filter.GetOutput()
     dim = vtkim.GetDimensions()
     return numpy_support.vtk_to_numpy(vtkim.GetPointData().GetScalars()).reshape(dim[1], dim[0], 3)
+
+
+def create_survey_movie(mabdi_simulate,
+                        survey_mesh=False,
+                        nsteps=None,
+                        fps=2):
+    """
+    Note: This method assumes the source is centered on the xz plane
+    :param mabdi_simulate: Instance of MabdiSimulate
+    :param survey_mesh: Show the global mesh or not.
+    :param nsteps: Number of steps for the movie
+    :param fps: Frames per second for the movie
+    """
+
+    sourceAo = mabdi.VTKPolyDataActorObjects(mabdi_simulate.source)
+    sourceAo.actor.GetProperty().SetColor(slate_grey_light)
+    sourceAo.actor.GetProperty().SetSpecularColor(1, 1, 1)
+    sourceAo.actor.GetProperty().SetSpecular(0.3)
+    sourceAo.actor.GetProperty().SetSpecularPower(20)
+    sourceAo.actor.GetProperty().SetAmbient(0.2)
+    sourceAo.actor.GetProperty().SetDiffuse(0.8)
+    # sourceAo.actor.GetProperty().SetOpacity(0.2)
+
+    meshAo = mabdi.VTKPolyDataActorObjects(mabdi_simulate.mesh)
+    meshAo.actor.GetProperty().SetColor(salmon)
+    meshAo.actor.GetProperty().SetColor(slate_grey_light)
+    meshAo.actor.GetProperty().SetSpecularColor(1, 1, 1)
+    meshAo.actor.GetProperty().SetSpecular(0.3)
+    meshAo.actor.GetProperty().SetSpecularPower(20)
+    meshAo.actor.GetProperty().SetAmbient(0.2)
+    meshAo.actor.GetProperty().SetDiffuse(0.8)
+    # meshAo.actor.GetProperty().SetOpacity(0.5)
+
+    renWin = vtk.vtkRenderWindow()
+    renWin.SetSize(640, 480)
+    iren = vtk.vtkRenderWindowInteractor()
+    iren.SetRenderWindow(renWin)
+
+    ren = vtk.vtkRenderer()
+    ren.SetBackground(eggshell)
+
+    ren.AddActor(sourceAo.actor)
+
+    renWin.AddRenderer(ren)
+
+    iren.Initialize()
+
+    cam = ren.GetActiveCamera()
+
+    position, lookat = \
+        create_sensor_path(name=mabdi_simulate._output['path_flight'],
+                           nsteps=nsteps)
+
+    if survey_mesh:
+        ren.AddActor(meshAo.actor)
+        sourceAo.actor.GetProperty().SetOpacity(0.2)
+        # sourceAo.actor.VisibilityOff()
+
+    # iren.Start()
+    movie = mabdi.RenderWindowToAvi(renWin,
+                                    mabdi_simulate._file_prefix,
+                                    fps=fps,
+                                    savefig_at_frame=mabdi_simulate._output['movie_savefig_at_frame'])
+    for i, (pos, lka) in enumerate(zip(position, lookat)):
+        cam.SetPosition(pos)
+        cam.SetFocalPoint(lka)
+        iren.Render()
+
+    movie.save_movie()
+
+    iren.GetRenderWindow().Finalize()
+    iren.TerminateApp()
+    del iren, ren, renWin
+
+    return

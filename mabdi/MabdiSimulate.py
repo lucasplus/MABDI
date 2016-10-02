@@ -5,6 +5,8 @@ from vtk.util.colors import eggshell, slate_grey_light, red, yellow, salmon, blu
 from vtk.util import numpy_support
 
 import mabdi
+from mabdi.MabdiSimulateUtilities import add_sensor_visualization, create_sensor_path, find_bounds_and_observation_position_lookat
+from mabdi.Output import create_survey_movie
 
 import numpy as np
 
@@ -108,7 +110,7 @@ class MabdiSimulate(object):
 
         # get bounds of the source without the floor
         self.source.bounds, self.source.position, self.source.lookat = \
-            self._find_bounds_and_observation_position_lookat(self.source)
+            find_bounds_and_observation_position_lookat(self.source)
         if output['source_obs_position']:
             self.source.position = output['source_obs_position']
         if output['source_obs_lookat']:
@@ -117,9 +119,9 @@ class MabdiSimulate(object):
         """ Sensor path """
 
         self.position, self.lookat = \
-            mabdi.SensorPath.create_sensor_path(name=sim_param['path_name'],
-                                                nsteps=sim_param['path_nsteps'],
-                                                bounds=self.source.bounds)
+            create_sensor_path(name=sim_param['path_name'],
+                               nsteps=sim_param['path_nsteps'],
+                               bounds=self.source.bounds)
 
         """ Actor objects """
 
@@ -146,7 +148,7 @@ class MabdiSimulate(object):
         renScenario = vtk.vtkRenderer()
         renScenario.SetBackground(eggshell)
         renScenario.SetViewport(0.0 / 2.0, 0.0, 1.0 / 2.0, 1.0)
-        self._add_sensor_visualization(renScenario)
+        add_sensor_visualization(self.di, self.position, renScenario)
         renScenario.AddActor(sourceAo.actor)
         renScenario.AddActor(surfAo.actor)
         renScenario.AddActor(meshAo.actor)
@@ -157,7 +159,7 @@ class MabdiSimulate(object):
         renSurf = vtk.vtkRenderer()
         renSurf.SetBackground(eggshell)
         renSurf.SetViewport(1.0 / 2.0, 0.0, 2.0 / 2.0, 1.0)
-        self._add_sensor_visualization(renSurf)
+        add_sensor_visualization(self.di, self.position, renSurf)
         renSurf.AddActor(sourceAo.actor)
         renSurf.AddActor(surfAo.actor)
         renSurf.GetActiveCamera().SetPosition(self.source.position)
@@ -170,158 +172,7 @@ class MabdiSimulate(object):
 
         return
 
-    @staticmethod
-    def _find_bounds_and_observation_position_lookat(vtk_algorithm):
-        bounds = []
-        if callable(vtk_algorithm.set_object_state):
-            vtk_algorithm.set_object_state(object_id='floor', state=False)
-            vtk_algorithm.Update()
-            bounds = vtk_algorithm.GetOutputDataObject(0).GetBounds()
-            vtk_algorithm.set_object_state(object_id='floor', state=True)
-            vtk_algorithm.Update()
-        else:
-            bounds = vtk_algorithm.GetOutputDataObject(0).GetBounds()
 
-        # all these values were found very empirically
-        padc = (3.0, 5.0, 8.0)  # pad coefficient
-        position = (padc[0] * bounds[1] + 4.0,
-                    padc[1] * bounds[3],
-                    padc[2] * bounds[5] * 2.0 + 3.0)
-        lookat = (-padc[0] * bounds[1],
-                  padc[1] * bounds[3] * -0.3,
-                  -padc[2] * bounds[5])
-
-        return bounds, position, lookat
-
-    def _add_sensor_visualization(self, vtk_renderer):
-        """
-        Add visualization specific to the sensor
-        :param vtk_renderer: The vtkRenderer where the actors will be added.
-        """
-
-        """ Frustum of the sensor """
-
-        cameraActor = vtk.vtkCameraActor()
-        cameraActor.SetCamera(self.di.get_vtk_camera())
-        cameraActor.SetWidthByHeightRatio(self.di.get_width_by_height_ratio())
-        cameraActor.GetProperty().SetColor(blue)
-
-        """ Path of the sensor """
-
-        npts = self.position.shape[0]
-
-        points = vtk.vtkPoints()
-        points.SetNumberOfPoints(npts)
-        lines = vtk.vtkCellArray()
-        lines.InsertNextCell(npts)
-        for i, pos in enumerate(self.position):
-            points.SetPoint(i, pos)
-            lines.InsertCellPoint(i)
-
-        polydata = vtk.vtkPolyData()
-        polydata.SetPoints(points)
-        polydata.SetLines(lines)
-
-        polymapper = vtk.vtkPolyDataMapper()
-        polymapper.SetInputData(polydata)
-        polymapper.Update()
-
-        actor = vtk.vtkActor()
-        actor.SetMapper(polymapper)
-        actor.GetProperty().SetColor(blue)
-        actor.GetProperty().SetOpacity(0.5)
-
-        ball = vtk.vtkSphereSource()
-        ball.SetRadius(0.02)
-        ball.SetThetaResolution(12)
-        ball.SetPhiResolution(12)
-        balls = vtk.vtkGlyph3D()
-        balls.SetInputData(polydata)
-        balls.SetSourceConnection(ball.GetOutputPort())
-        mapBalls = vtk.vtkPolyDataMapper()
-        mapBalls.SetInputConnection(balls.GetOutputPort())
-        spcActor = vtk.vtkActor()
-        spcActor.SetMapper(mapBalls)
-        spcActor.GetProperty().SetColor(hot_pink)
-        spcActor.GetProperty().SetSpecularColor(1, 1, 1)
-        spcActor.GetProperty().SetSpecular(0.3)
-        spcActor.GetProperty().SetSpecularPower(20)
-        spcActor.GetProperty().SetAmbient(0.2)
-        spcActor.GetProperty().SetDiffuse(0.8)
-
-        """ Add to the given renderer """
-
-        vtk_renderer.AddActor(spcActor)
-        vtk_renderer.AddActor(cameraActor)
-        vtk_renderer.AddActor(actor)
-
-    def _create_survey_movie(self,
-                             survey_source=True,
-                             survey_mesh=False,
-                             nsteps=None,
-                             fps=2):
-        """
-        Note: This method assumes the source is centered on the xz plane
-        """
-
-        sourceAo = mabdi.VTKPolyDataActorObjects(self.source)
-        sourceAo.actor.GetProperty().SetColor(slate_grey_light)
-        sourceAo.actor.GetProperty().SetSpecularColor(1, 1, 1)
-        sourceAo.actor.GetProperty().SetSpecular(0.3)
-        sourceAo.actor.GetProperty().SetSpecularPower(20)
-        sourceAo.actor.GetProperty().SetAmbient(0.2)
-        sourceAo.actor.GetProperty().SetDiffuse(0.8)
-        # sourceAo.actor.GetProperty().SetOpacity(0.2)
-
-        meshAo = mabdi.VTKPolyDataActorObjects(self.mesh)
-        meshAo.actor.GetProperty().SetColor(salmon)
-        meshAo.actor.GetProperty().SetColor(slate_grey_light)
-        meshAo.actor.GetProperty().SetSpecularColor(1, 1, 1)
-        meshAo.actor.GetProperty().SetSpecular(0.3)
-        meshAo.actor.GetProperty().SetSpecularPower(20)
-        meshAo.actor.GetProperty().SetAmbient(0.2)
-        meshAo.actor.GetProperty().SetDiffuse(0.8)
-        # meshAo.actor.GetProperty().SetOpacity(0.5)
-
-        renWin = vtk.vtkRenderWindow()
-        renWin.SetSize(640, 480)
-        iren = vtk.vtkRenderWindowInteractor()
-        iren.SetRenderWindow(renWin)
-
-        ren = vtk.vtkRenderer()
-        ren.SetBackground(eggshell)
-
-        ren.AddActor(sourceAo.actor)
-
-        renWin.AddRenderer(ren)
-
-        iren.Initialize()
-
-        cam = ren.GetActiveCamera()
-
-        position, lookat = \
-            mabdi.SensorPath.create_sensor_path(name=self._output['path_flight'],
-                                                nsteps=nsteps)
-
-        if survey_mesh:
-            ren.AddActor(meshAo.actor)
-            sourceAo.actor.GetProperty().SetOpacity(0.2)
-            # sourceAo.actor.VisibilityOff()
-
-        # iren.Start()
-        movie = mabdi.RenderWindowToAvi(renWin, self._file_prefix, fps=fps, savefig_at_frame=self._output['movie_savefig_at_frame'])
-        for i, (pos, lka) in enumerate(zip(position, lookat)):
-            cam.SetPosition(pos)
-            cam.SetFocalPoint(lka)
-            iren.Render()
-
-        movie.save_movie()
-
-        iren.GetRenderWindow().Finalize()
-        iren.TerminateApp()
-        del iren, ren, renWin
-
-        return
 
     def run(self):
         logging.info('')
@@ -329,10 +180,10 @@ class MabdiSimulate(object):
         # self.iren.Start()
 
         if self._output['movie_preflight']:
-            self._create_survey_movie(survey_source=True,
-                                      survey_mesh=False,
-                                      nsteps=self._output['preflight_nsteps'],
-                                      fps=self._output['preflight_fps'])
+            create_survey_movie(self,
+                                survey_mesh=False,
+                                nsteps=self._output['preflight_nsteps'],
+                                fps=self._output['preflight_fps'])
 
         if self._output['movie']:
             pp = mabdi.PostProcess(
@@ -386,7 +237,7 @@ class MabdiSimulate(object):
 
             if self._sim_param['interactive']:
                 self.iren.Start()
-            self.iren.Start()
+
             end = timer()
             logging.debug('END MAIN LOOP time {:.4f} seconds'.format(end - start))
 
@@ -394,10 +245,10 @@ class MabdiSimulate(object):
             pp.save_movie()
 
         if self._output['movie_postflight']:
-            self._create_survey_movie(survey_source=True,
-                                      survey_mesh=True,
-                                      nsteps=self._output['postflight_nsteps'],
-                                      fps=self._output['postflight_fps'])
+            create_survey_movie(self,
+                                survey_mesh=True,
+                                nsteps=self._output['postflight_nsteps'],
+                                fps=self._output['postflight_fps'])
             # mabdi.MovieNamesList.write_movie_list(self._file_prefix) # has a bug
 
         if self._output['save_global_mesh']:
