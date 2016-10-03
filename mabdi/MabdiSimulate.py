@@ -1,7 +1,7 @@
 import os
 
 import vtk
-from vtk.util.colors import eggshell, slate_grey_light, red, yellow, salmon, blue, hot_pink
+from vtk.util.colors import eggshell, slate_grey_light, light_grey, red, green, yellow, salmon, blue, hot_pink
 from vtk.util import numpy_support
 
 import mabdi
@@ -126,8 +126,8 @@ class MabdiSimulate(object):
         """ Actor objects """
 
         sourceAo = mabdi.VTKPolyDataActorObjects(self.source)
-        sourceAo.actor.GetProperty().SetColor(slate_grey_light)
-        sourceAo.actor.GetProperty().SetOpacity(0.2)
+        sourceAo.actor.GetProperty().SetColor(light_grey) # slate_grey_light
+        #sourceAo.actor.GetProperty().SetOpacity(0.7) #0.2
 
         surfAo = mabdi.VTKPolyDataActorObjects(self.surf)
         surfAo.actor.GetProperty().SetColor(red)
@@ -150,10 +150,30 @@ class MabdiSimulate(object):
         renScenario.SetViewport(0.0 / 2.0, 0.0, 1.0 / 2.0, 1.0)
         add_sensor_visualization(self.di, self.position, renScenario)
         renScenario.AddActor(sourceAo.actor)
-        renScenario.AddActor(surfAo.actor)
-        renScenario.AddActor(meshAo.actor)
-        renScenario.GetActiveCamera().SetPosition(self.source.position)
-        renScenario.GetActiveCamera().SetFocalPoint(self.source.lookat)
+        #renScenario.AddActor(surfAo.actor)
+        #renScenario.AddActor(meshAo.actor)
+        # renScenario.GetActiveCamera().SetPosition(self.source.position)
+        # renScenario.GetActiveCamera().SetFocalPoint(self.source.lookat)
+        pos = self.source.position
+        print pos
+        renScenario.GetActiveCamera().SetPosition((-5, pos[1]+0.5, pos[2]))
+        lka = self.source.lookat
+        print lka
+        renScenario.GetActiveCamera().SetFocalPoint((0, lka[1], lka[2]))
+
+        self.di.set_sensor_orientation(self.position[2], self.lookat[2])
+        self.sdi.set_sensor_orientation(self.position[2], self.lookat[2])
+        self.di.Modified()
+        self.sdi.Modified()
+
+        ctmat = self.di.get_vtk_camera().GetModelViewTransformMatrix()
+        tmat = vtk.vtkMatrix4x4()
+        tmat.DeepCopy(ctmat)
+        tmat.Invert()
+
+        # add coordinate markers
+        self._add_coordinate_markers(renScenario)
+        self._add_coordinate_markers(renScenario, tmat=tmat)
 
         # surf
         renSurf = vtk.vtkRenderer()
@@ -172,7 +192,32 @@ class MabdiSimulate(object):
 
         return
 
+    def _add_coordinate_markers(self, vtk_renderer, tmat=None):
 
+        if tmat is None:
+            tmat = np.array([[1, 0, 0, 0],
+                             [0, 1, 0, 0.1],
+                             [0, 0, 1, 0],
+                             [0, 0, 0, 1]])
+            tmat = tmat.flatten()
+        colors = [red, green, blue]
+
+        for i, color in enumerate(colors):
+            arrowSource = vtk.vtkArrowSource()
+
+            translation = vtk.vtkTransform()
+            translation.SetMatrix(tmat)
+            if i is 1: translation.RotateZ(90)
+            if i is 2: translation.RotateY(-90)
+
+            transformFilter = vtk.vtkTransformPolyDataFilter()
+            transformFilter.SetInputConnection(arrowSource.GetOutputPort())
+            transformFilter.SetTransform(translation)
+
+            arrowAO = mabdi.VTKPolyDataActorObjects(transformFilter)
+            arrowAO.actor.GetProperty().SetColor(color)
+
+            vtk_renderer.AddActor(arrowAO.actor)
 
     def run(self):
         logging.info('')
@@ -212,8 +257,11 @@ class MabdiSimulate(object):
             logging.debug('START MAIN LOOP')
             start = timer()
 
-            self.di.set_sensor_orientation(pos, lka)
-            self.sdi.set_sensor_orientation(pos, lka)
+            self.di.set_sensor_orientation(self.position[2], self.lookat[2])
+            self.sdi.set_sensor_orientation(self.position[2], self.lookat[2])
+
+            # self.di.set_sensor_orientation(pos, lka)
+            # self.sdi.set_sensor_orientation(pos, lka)
 
             if i in defn:
                 ind = defn.index(i)

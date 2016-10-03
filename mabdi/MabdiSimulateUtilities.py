@@ -66,9 +66,9 @@ def add_sensor_visualization(filter_depth_image, positions, vtk_renderer):
 
     """ Add to the given renderer """
 
-    vtk_renderer.AddActor(spcActor)
+    #vtk_renderer.AddActor(spcActor)
     vtk_renderer.AddActor(cameraActor)
-    vtk_renderer.AddActor(actor)
+    #vtk_renderer.AddActor(actor)
 
 
 """ Environment Calculations """

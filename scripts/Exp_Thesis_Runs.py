@@ -23,13 +23,13 @@ g_sim_param = {'environment_name': 'stanford_bunny',
                'noise': True,
                'interactive': False}
 g_output = {'folder_name': 'env_3bunny',
-            'movie': True,
+            'movie': False,
             'movie_fps': fps,
             'movie_savefig_at_frame': (0, 1, 2, int(round(nsteps * 0.5)) - 2, int(round(nsteps * 0.5)) - 1, int(round(nsteps * 0.5)), int(round(nsteps * 0.5)) + 1, nsteps-1, nsteps),
             'source_obs_position': (7.0, 3.0, 11.0),
             'source_obs_lookat': (-5.0, -1.4, -8.0),
-            'movie_preflight': True,
-            'movie_postflight': True,
+            'movie_preflight': False,
+            'movie_postflight': False,
             'preflight_nsteps': nsteps,
             'postflight_nsteps': nsteps,
             'preflight_fps': fps,
@@ -50,7 +50,7 @@ if run or runall:
     sim_param['noise'] = False
     sim_param['environment_name'] = 'table'
 
-    # sim_param['interactive'] = True
+    sim_param['interactive'] = True
 
     output['folder_name'] = 'env_table_static_noise_false_nsteps' + str(nsteps)
 
