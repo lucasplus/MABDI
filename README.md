@@ -43,7 +43,7 @@ elements shown in blue are the core components of the MABDI algorithm and are
 implemented as custom VTK filters. Here we will discuss all components in
 detail:
 
-![Software Diagram](software_diagram.pdf)
+![Software Diagram](software_diagram.png)
 
 1. Source - Classes with the prefix Source define the
 environment that is used for the simulation and provide a mesh in the form
