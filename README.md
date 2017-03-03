@@ -68,4 +68,4 @@ surface to a growing global mesh that is also output as a vtkPolyData.
 
 ## Results
 
-<iframe width="560" height="315" src="https://www.youtube.com/embed/SFv2fov3yM0" frameborder="0" allowfullscreen></iframe>
+[Video of experiment](https://www.youtube.com/watch?v=SFv2fov3yM0)
