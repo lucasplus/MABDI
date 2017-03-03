@@ -20,6 +20,10 @@ to generate mesh elements from the data.
 
 ## Software Design
 
+Folder structure:
+* mabdi - My python package that implements the MABDI algorithm.
+* scripts - Contains script files that use the MABDI package to execute experiments.
+
 From a software perspective, the major difficulty of implementing the MABDI
 algorithm was found to be creating both the simulated depth image 'D' and the
 expected depth image 'E'. In addition, managing the complexity of the data
@@ -61,3 +65,7 @@ on the novel points. For more detail see Section
 vtkPolyData.
 6. FilterWorldMesh - Here we simply append the incoming novel
 surface to a growing global mesh that is also output as a vtkPolyData.
+
+## Results
+
+<iframe width="560" height="315" src="https://www.youtube.com/embed/SFv2fov3yM0" frameborder="0" allowfullscreen></iframe>
